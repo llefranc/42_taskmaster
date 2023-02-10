@@ -12,7 +12,7 @@
 
 NAME		=	taskmaster
 
-SRCS		=	main.cpp ProgramBlock.cpp
+SRCS		=	main.cpp ProgramBlock.cpp ProcInfo.cpp
 
 PATH_SRCS	=	src/
 
