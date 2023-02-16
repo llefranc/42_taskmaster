@@ -31,3 +31,6 @@
 *.out
 *.app
 taskmaster
+
+# IDE config files
+.vscode

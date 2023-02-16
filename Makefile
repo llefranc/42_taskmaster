@@ -6,13 +6,13 @@
 #    By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/02/08 15:19:33 by llefranc          #+#    #+#              #
-#    Updated: 2023/02/08 15:32:08 by llefranc         ###   ########.fr        #
+#    Updated: 2023/02/16 14:18:13 by llefranc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME		=	taskmaster
 
-SRCS		=	main.cpp ProgramBlock.cpp ProcInfo.cpp
+SRCS		=	main.cpp ConfigParser.cpp ProgramBlock.cpp ProcInfo.cpp
 
 PATH_SRCS	=	src/
 
