@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 15:29:18 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/16 18:23:12 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/16 19:29:34 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,19 +31,26 @@ class Logger
 		Logger(const Logger &c);
 		Logger& operator=(const Logger &a);
 
+
+		/* ----------------------------------------------- */
+		/* ------------------- GETTERS ------------------- */
+
 	public:
+
+		const std::string& getPath() const;
 
 
 		/* ----------------------------------------------- */
 		/* ------------------- METHODS ------------------- */
 
-		int init(const std::string &path);
+		void init(const std::string &path);
 		void iUser(const std::string &str);
 		void iFile(const std::string &str);
 		void iAll(const std::string &str);
 		void eUser(const std::string &str);
 		void eFile(const std::string &str);
 		void eAll(const std::string &str);
+		static std::string dateToStr();
 
 
 		/* ----------------------------------------------- */
