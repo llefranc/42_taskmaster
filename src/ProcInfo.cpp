@@ -1,72 +1,126 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ProcInfo.cpp                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/02/17 17:05:25 by llefranc          #+#    #+#             */
+/*   Updated: 2023/02/17 18:39:05 by llefranc         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "ProcInfo.hpp"
 
-ProcInfo::ProcInfo(std::string const& name, int state)
-	: name_(name)
-	, pid_(0)
-	, state_(state)
-	, nbRestart_(0)
-	, startTime_(0)
-	, endTime_(0)
-{
+#include <unordered_map>
+#include <sstream>
 
+
+/* ----------------------------------------------- */
+/* ---------------- COPLIEN FORM ----------------- */
+
+ProcInfo::ProcInfo() :
+	state_(PC_STATE_STOP),
+	name_(),
+	hash_(),
+	pid_(0),
+	nbRestart_(0),
+	startTime_(0),
+	endTime_(0)
+{}
+
+ProcInfo::ProcInfo(const std::string &name, int nbRestart, long startTime,
+		long endTime) :
+	state_(PC_STATE_STOP),
+	name_(name),
+	pid_(0),
+	nbRestart_(nbRestart),
+	startTime_(startTime),
+	endTime_(endTime)
+{
+	std::stringstream stream;
+	std::hash<std::string> hasher;
+	size_t hashNb = hasher(name);
+
+	stream << std::hex << hashNb;
+	hash_ = stream.str();
 }
 
-ProcInfo::~ProcInfo()
+ProcInfo::~ProcInfo() {}
+
+ProcInfo::ProcInfo(const ProcInfo& c) :
+	state_(c.state_),
+	name_(c.name_),
+	hash_(c.hash_),
+	pid_(c.pid_),
+	nbRestart_(c.nbRestart_),
+	startTime_(c.startTime_),
+	endTime_(c.endTime_)
+{}
+
+ProcInfo& ProcInfo::operator=(ProcInfo a)
 {
-
-}
-
-ProcInfo::ProcInfo(ProcInfo& proc)
-{
-	(void)proc;
-}
-
-ProcInfo& ProcInfo::operator=(ProcInfo& proc)
-{
-	this->name_ = proc.getName();
-	this->pid_ = proc.getPid();
-	this->state_ = proc.getState();
-	this->nbRestart_ = proc.getNbRestart();
-	this->startTime_ = proc.getStartTime();
-	this->endTime_ = proc.getEndTime();
-
+	swap(*this, a);
 	return *this;
 }
 
-std::string& ProcInfo::getName()
-{
-	return name_;
-}
 
-int ProcInfo::getPid()
-{
-	return pid_;
-}
+/* ----------------------------------------------- */
+/* ------------------- GETTERS ------------------- */
 
-int ProcInfo::getNbRestart()
-{
-	return nbRestart_;
-}
-
-int ProcInfo::getState()
+int ProcInfo::getState() const
 {
 	return state_;
 }
 
-long ProcInfo::getStartTime()
+const std::string& ProcInfo::getName() const
+{
+	return name_;
+}
+
+const std::string& ProcInfo::getHash() const
+{
+	return hash_;
+}
+
+int ProcInfo::getPid() const
+{
+	return pid_;
+}
+
+int ProcInfo::getNbRestart() const
+{
+	return nbRestart_;
+}
+
+
+long ProcInfo::getStartTime() const
 {
 	return startTime_;
 }
 
-long ProcInfo::getEndTime()
+long ProcInfo::getEndTime() const
 {
 	return endTime_;
 }
 
 
-void ProcInfo::setName(std::string& name)
+/* ----------------------------------------------- */
+/* ------------------- SETTERS ------------------- */
+
+void ProcInfo::setState(int state)
+{
+	state_ = state;
+}
+
+void ProcInfo::setName(const std::string &name)
 {
 	name_ = name;
+}
+
+void ProcInfo::setHash(const std::string &hash)
+{
+	hash_ = hash;
 }
 
 void ProcInfo::setPid(int pid)
@@ -79,10 +133,6 @@ void ProcInfo::setNbRestart(int nb)
 	nbRestart_ = nb;
 }
 
-void ProcInfo::setState(int end)
-{
-	endTime_ = end;
-}
 
 void ProcInfo::setStartTime(long start)
 {
@@ -95,7 +145,47 @@ void ProcInfo::setEndTime(long end)
 }
 
 
-void ProcInfo::toString()
-{
+/* ----------------------------------------------- */
+/* ------------------- METHODS ------------------- */
 
+// rendu attendu:
+// process1                         RUNNING    pid 935, uptime 17386 days, 14:52:25
+// process2                         RUNNING    pid 936, uptime 17386 days, 14:52:25
+// process3                         RUNNING    pid 31907, uptime 0:00:09
+std::string ProcInfo::toString() const
+{
+	std::string str(30, ' ');
+	static const std::string stateStr[5] = {
+		"STOP",
+		"CRASHED",
+		"STARTING",
+		"RUNNING",
+		"FATAL"
+	};
+
+	for (size_t i = 0; i < name_.length() && i < str.length() - 1; ++i)
+		str[i] = name_[i];
+	str += stateStr[state_];
+
+	size_t len = 40 - str.length();
+	std::string padding(len, ' ');
+	str += padding;
+
+	str += "pid |";
+	return str;
+}
+
+
+/* ----------------------------------------------- */
+/* ---------------- HERLPER FUNCS ---------------- */
+
+void swap(ProcInfo &a, ProcInfo &b)
+{
+	std::swap(a.state_, b.state_);
+	std::swap(a.name_, b.name_);
+	std::swap(a.hash_, b.hash_);
+	std::swap(a.pid_, b.pid_);
+	std::swap(a.nbRestart_, b.nbRestart_);
+	std::swap(a.startTime_, b.startTime_);
+	std::swap(a.endTime_, b.startTime_);
 }
