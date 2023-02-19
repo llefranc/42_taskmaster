@@ -6,12 +6,13 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/16 14:22:47 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/17 17:26:37 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ConfigParser.hpp"
 
+#include <fstream>
 
 /* ----------------------------------------------- */
 /* ---------------- COPLIEN FORM ----------------- */
@@ -46,6 +47,27 @@ const std::string& ConfigParser::getCfPath() const
 void ConfigParser::setCfPath(const std::string &cfPath)
 {
 	cfPath_ = cfPath;
+}
+
+
+/* ----------------------------------------------- */
+/* ------------------- METHODS ------------------- */
+#include <iostream>
+int ConfigParser::load(Logger *log, const std::string &cfPath)
+{
+	std::string line;
+	std::ifstream ifs(cfPath);
+
+	if (!ifs.is_open())
+		return ERR_COULD_NOT_OPEN_FILE;
+
+	while (std::getline(ifs, line));
+		// std::cout << "line " << ++i << ": " << line << "\n";
+
+	ifs.close();
+	log->iUser("Pasring finished\n");
+
+	return 0;
 }
 
 

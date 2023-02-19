@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/16 14:22:16 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/17 14:35:41 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,9 +15,17 @@
 
 #include <string>
 
+#include "Logger.hpp"
+
 class ConfigParser
 {
 	public:
+
+		static enum {
+			ERR_COULD_NOT_OPEN_FILE = -1,
+			ERR_PARSING = -2,
+		} E_errStatus;
+
 
 		/* ----------------------------------------------- */
 		/* ---------------- COPLIEN FORM ----------------- */
@@ -43,6 +51,9 @@ class ConfigParser
 
 		/* ----------------------------------------------- */
 		/* ------------------- METHODS ------------------- */
+
+		int load(Logger *log, const std::string &cfPath);
+		// int reload(Logger *log, const std::string &cfPath);
 
 
 		/* ----------------------------------------------- */
