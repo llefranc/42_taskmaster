@@ -6,13 +6,19 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/17 17:26:37 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/19 19:24:15 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ConfigParser.hpp"
 
+#include <list>
 #include <fstream>
+
+#include "ProgramBlock.hpp"
+
+static int lineNb = 0;
+
 
 /* ----------------------------------------------- */
 /* ---------------- COPLIEN FORM ----------------- */
@@ -53,21 +59,37 @@ void ConfigParser::setCfPath(const std::string &cfPath)
 /* ----------------------------------------------- */
 /* ------------------- METHODS ------------------- */
 #include <iostream>
-int ConfigParser::load(Logger *log, const std::string &cfPath)
+std::list<ProgramBlock> ConfigParser::load(const std::string &cfPath)
 {
+	ProgramBlock pb;
+	std::list<ProgramBlock> pbList;
+	bool inProgramBlock = false;
 	std::string line;
 	std::ifstream ifs(cfPath);
 
-	if (!ifs.is_open())
-		return ERR_COULD_NOT_OPEN_FILE;
+	if (!ifs.is_open()) {
+		throw std::runtime_error("Failed to open config file (path: "
+			+ cfPath + ")\n");
+	}
 
-	while (std::getline(ifs, line));
+	while (std::getline(ifs, line)) {
+		++lineNb;
+	}
 		// std::cout << "line " << ++i << ": " << line << "\n";
 
-	ifs.close();
-	log->iUser("Pasring finished\n");
+	if (inProgramBlock) {
+		if (pb.isCorrect()) {
+			pbList.push_back(pb);
+		} else if (!pb.getName().empty() && pb.getCmd().empty()) {
+			throw std::runtime_error(pb.getName() + " is missing "
+				"cmd line\n");
+		}
+	}
+	if (pbList.empty())
+		throw std::runtime_error("Config file is empty\n");
 
-	return 0;
+	ifs.close();
+	return pbList;
 }
 
 

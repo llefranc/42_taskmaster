@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:24:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/19 17:52:17 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/19 19:44:08 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,20 +16,32 @@
 
 int main(int ac, char** av)
 {
+	Logger log;
 	TaskMaster taskMaster;
 
 	if (ac != 3) {
-		std::cerr << "[FATAL] Wrong number of arguments\n";
+		std::cerr << "[ERROR] Wrong number of arguments\n";
 		std::cout << "Usage: taskmaster config-file log-file\n";
 		return 1;
 	}
 
 	try {
-		taskMaster.initConfigParser(av[1]);
-		taskMaster.initLogger(av[2]);
-		taskMaster.shellRoutine();
+		log.init(av[2]);
 	} catch (const std::runtime_error &e) {
 		std::cerr << e.what();
+		std::cout << "[INFO ] Taskmaster exited unexpectedly\n";
+		return 1;
+	}
+	log.iAll("Starting taskmaster\n");
+	log.iUser("Logger initialized (path: " + log.getPath() + ")\n");
+	taskMaster.setLogger(&log);
+
+	try {
+		taskMaster.initConfigParser(av[1]);
+		taskMaster.shellRoutine();
+	} catch (const std::runtime_error &e) {
+		log.eAll(e.what());
+		log.iAll("Taskmaster exited unexpectedly\n");
 		return 1;
 	}
 
@@ -77,11 +89,10 @@ int main(int ac, char** av)
 // 	ProgramBlock c;
 // 	c = a;
 
-// 	vecpci.clear();
-// 	a.setProcInfos(vecpci);
 // 	b.print();
 // 	c.print();
 // 	a.print();
-
-
+// 	a.clear();
+// 	a.print();
+// 	return 0;
 // }

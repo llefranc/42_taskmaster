@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/17 14:35:41 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/19 19:07:03 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,9 @@
 #define CONFIG_PARSER_HPP
 
 #include <string>
+#include <list>
 
-#include "Logger.hpp"
+#include "ProgramBlock.hpp"
 
 class ConfigParser
 {
@@ -52,7 +53,7 @@ class ConfigParser
 		/* ----------------------------------------------- */
 		/* ------------------- METHODS ------------------- */
 
-		int load(Logger *log, const std::string &cfPath);
+		std::list<ProgramBlock> load(const std::string &cfPath);
 		// int reload(Logger *log, const std::string &cfPath);
 
 

@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:22 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/17 17:04:46 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/19 19:19:36 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 
 #include "Logger.hpp"
 #include "ConfigParser.hpp"
-
+#include "ProgramBlock.hpp"
 
 extern int g_nbSigChldReceived;
 
@@ -36,9 +36,20 @@ class TaskMaster
 	public:
 
 		/* ----------------------------------------------- */
+		/* ------------------- GETTERS ------------------- */
+
+		Logger* getLogger() const;
+
+
+		/* ----------------------------------------------- */
+		/* ------------------- SETTERS ------------------- */
+
+		void setLogger(Logger* log);
+
+
+		/* ----------------------------------------------- */
 		/* ------------------- METHODS ------------------- */
 
-		void initLogger(const std::string &logPath);
 		void initConfigParser(const std::string &cfPath);
 		void shellRoutine();
 
@@ -48,8 +59,9 @@ class TaskMaster
 
 	private:
 
-		Logger log_;
+		Logger* log_;
 		ConfigParser configParser_;
+		std::list<ProgramBlock> pbList_;
 
 };
 

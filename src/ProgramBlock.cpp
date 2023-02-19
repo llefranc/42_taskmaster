@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:17:16 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/19 17:23:46 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/19 18:03:44 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -251,6 +251,27 @@ void ProgramBlock::setEnv(const std::vector<std::string>& env)
 bool ProgramBlock::isCorrect() const
 {
 	return name_.length() && cmd_.length();
+}
+
+void ProgramBlock::clear()
+{
+	state_ = PB_STATE_NEW;
+	procInfos_.clear();
+	name_ = "";
+	cmd_ = "";
+	numProcs_ = 1;
+	umask_ = "022";
+	workDir_ = "";
+	autoStart_ = false;
+	autoRestart_ = false;
+	startRetries_ = 0;
+	startTime_ = 0;
+	exitCodes_.clear();
+	exitCodes_.push_back(0);
+	stopSignal_ = SIGTERM;
+	logOut_ = "/tmp";
+	logErr_ = "/tmp";
+	env_.clear();
 }
 
 #include <iostream>

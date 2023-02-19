@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/17 14:41:12 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/19 19:21:45 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,35 +18,37 @@ int g_nbSigChldReceived = 0;
 /* ----------------------------------------------- */
 /* ---------------- COPLIEN FORM ----------------- */
 
-TaskMaster::TaskMaster() : log_(), configParser_() {}
+TaskMaster::TaskMaster() : log_(NULL), configParser_() {}
 
 TaskMaster::~TaskMaster() {}
 
 
 /* ----------------------------------------------- */
-/* ------------------- METHODS ------------------- */
+/* ------------------- GETTERS ------------------- */
 
-void TaskMaster::initLogger(const std::string &logPath)
+Logger* TaskMaster::getLogger() const
 {
-	log_.init(logPath);
-	log_.iUser("Logger initialized (path: " + log_.getPath() + ")\n");
+	return log_;
 }
+
+
+/* ----------------------------------------------- */
+/* ------------------- SETTERS ------------------- */
+
+void TaskMaster::setLogger(Logger* log)
+{
+	log_ = log;
+}
+
+
+/* ----------------------------------------------- */
+/* ------------------- METHODS ------------------- */
 
 void TaskMaster::initConfigParser(const std::string &path)
 {
-	int ret;
-
-	ret = configParser_.load(&log_, path);
-
-	if (ret == ConfigParser::ERR_COULD_NOT_OPEN_FILE) {
-		throw std::runtime_error("[FATAL] Failed to open config"
-				" file (path: " + path + ")\n");
-	} else if (ret == ConfigParser::ERR_PARSING) {
-		throw std::runtime_error("[FATAL] Error while parsing "
-				"configuration file (path: " + path + ")\n");
-	}
+	pbList_ = configParser_.load(path);
 }
 
 void TaskMaster::shellRoutine() {
-	log_.iUser("Launching shell\n");
+	log_->iUser("Launching shell\n");
 }

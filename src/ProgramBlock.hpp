@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 14:54:11 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/19 17:06:16 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/19 18:03:37 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,6 +92,7 @@ class ProgramBlock
 		/* ------------------- METHODS ------------------- */
 
 		bool isCorrect() const;
+		void clear();
 		void print() const;
 
 
