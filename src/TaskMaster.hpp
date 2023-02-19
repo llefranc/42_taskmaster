@@ -15,7 +15,9 @@
 
 #include "Logger.hpp"
 #include "ConfigParser.hpp"
-
+#include "Spawner.hpp"
+#include "ProgramBlock.hpp"
+#include <list>
 
 extern int g_nbSigChldReceived;
 
@@ -43,9 +45,10 @@ class TaskMaster
 		void shellRoutine();
 
 	private:
-
+		std::list<ProgramBlock> pb_;
 		Logger log_;
 		ConfigParser configParser_;
+		Spawner spawner_;
 
 };
 
