@@ -12,7 +12,8 @@
 
 NAME		=	taskmaster
 
-SRCS		=	main.cpp ConfigParser.cpp ProgramBlock.cpp ProcInfo.cpp
+SRCS		=	main.cpp ConfigParser.cpp ProgramBlock.cpp ProcInfo.cpp Spawner.cpp \
+				Logger.cpp
 
 PATH_SRCS	=	src/
 
