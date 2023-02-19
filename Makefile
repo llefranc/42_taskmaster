@@ -6,13 +6,13 @@
 #    By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/02/08 15:19:33 by llefranc          #+#    #+#              #
-#    Updated: 2023/02/16 14:18:13 by llefranc         ###   ########.fr        #
+#    Updated: 2023/02/16 19:01:21 by llefranc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME		=	taskmaster
 
-SRCS		=	main.cpp ConfigParser.cpp ProgramBlock.cpp ProcInfo.cpp
+SRCS		=	main.cpp Logger.cpp TaskMaster.cpp ConfigParser.cpp ProgramBlock.cpp ProcInfo.cpp
 
 PATH_SRCS	=	src/
 
@@ -22,7 +22,7 @@ HDRS		=	src/*.hpp
 
 CC		=	g++
 
-FLAGS		=	-g -fsanitize=address -Wall -Werror -Wextra
+FLAGS		=	 -std=c++11 -g -fsanitize=address -Wall -Werror -Wextra
 
 all		:	$(NAME)
 
