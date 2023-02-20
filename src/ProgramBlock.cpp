@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:17:16 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/19 18:03:44 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/20 14:56:25 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ ProgramBlock::ProgramBlock() :
 	startTime_(0),
 	exitCodes_(1, 0),
 	stopSignal_(SIGTERM),
+	stopTime_(0),
 	logOut_("/tmp"),
 	logErr_("/tmp"),
 	env_()
@@ -49,6 +50,7 @@ ProgramBlock::ProgramBlock(const ProgramBlock &c) :
 	startTime_(c.startTime_),
 	exitCodes_(c.exitCodes_),
 	stopSignal_(c.stopSignal_),
+	stopTime_(c.stopTime_),
 	logOut_(c.logOut_),
 	logErr_(c.logErr_),
 	env_(c.env_)
@@ -141,6 +143,10 @@ const int& ProgramBlock::getStopSignal() const
 	return stopSignal_;
 }
 
+const int& ProgramBlock::getStopTime() const
+{
+	return stopTime_;
+}
 
 const std::string& ProgramBlock::getLogOut() const
 {
@@ -227,6 +233,11 @@ void ProgramBlock::setExitCodes(const std::vector<int>& exitCodes)
 void ProgramBlock::setStopSignal(const int stopSignal)
 {
 	stopSignal_ = stopSignal;
+}
+
+void ProgramBlock::setStopTime(const int stopTime)
+{
+	stopTime_ = stopTime;
 }
 
 void ProgramBlock::setLogOut(const std::string& logOut)

@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/19 19:21:45 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/20 12:46:27 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,7 @@ void TaskMaster::setLogger(Logger* log)
 
 void TaskMaster::initConfigParser(const std::string &path)
 {
+	log_->iAll("Parsing configuration file (path: " + path + ")\n");
 	pbList_ = configParser_.load(path);
 }
 

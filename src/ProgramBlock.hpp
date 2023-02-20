@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 14:54:11 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/19 18:03:37 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/20 14:35:06 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,7 @@ class ProgramBlock
 		const int& getStartTime() const;
 		const std::vector<int>& getExitCodes() const;
 		const int& getStopSignal() const;
+		const int& getStopTime() const;
 		const std::string& getLogOut() const;
 		const std::string& getLogErr() const;
 		const std::vector<std::string>& getEnv() const;
@@ -83,6 +84,7 @@ class ProgramBlock
 		void setStartTime(const int startTime);
 		void setExitCodes(const std::vector<int> &exitCodes);
 		void setStopSignal(const int stopSignal);
+		void setStopTime(const int stopTime);
 		void setLogOut(const std::string &logOut);
 		void setLogErr(const std::string &logErr);
 		void setEnv(const std::vector<std::string> &env);
@@ -120,6 +122,7 @@ class ProgramBlock
 		int startTime_;			// default: 0
 		std::vector<int> exitCodes_;	// default: std::vector(1, 0)
 		int stopSignal_;		// default: SIGTERM
+		int stopTime_;			// default: 0
 		std::string logOut_;		// default: "/tmp"
 		std::string logErr_;		// default: "/tmp"
 		std::vector<std::string> env_;	// default: std::vector()
