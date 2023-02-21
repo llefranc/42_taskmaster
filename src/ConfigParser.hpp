@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/20 14:48:20 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/21 15:28:18 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 #include <string>
 #include <list>
+#include <map>
 
 #include "ProgramBlock.hpp"
 
@@ -70,7 +71,7 @@ class ConfigParser
 
 
 		void checkFileOpening(std::ifstream *ifs,
-				const std::string& cfPath);
+				const std::string& path);
 		void parseToken(ProgramBlock *pb, const std::string &line);
 		void parseCmd(ProgramBlock *pb, const std::string &token,
 				const std::string &param);
@@ -101,6 +102,14 @@ class ConfigParser
 		void parseEnv(ProgramBlock *pb, const std::string &token,
 				const std::string &param);
 		bool isDigitStr(const std::string &str);
+		bool isOctalStr(const std::string &str);
+		std::vector<std::string> splitStr(const std::string &param,
+				char c);
+		int checkEnvKey(const std::string &varKey);
+		int checkEnvVal(const std::string &varVal);
+		std::pair<std::string, std::string> splitEnvVar(
+				const std::string &var);
+		std::vector<std::string> splitEnv(const std::string &param);
 
 
 		/* ----------------------------------------------- */

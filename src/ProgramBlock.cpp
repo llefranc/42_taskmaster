@@ -6,13 +6,16 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:17:16 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/20 14:56:25 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/21 15:08:10 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "ProgramBlock.hpp"
+
+#include <iostream>
+
 #include <signal.h>
 
-#include "ProgramBlock.hpp"
 
 ProgramBlock::ProgramBlock() :
 	state_(PB_STATE_NEW),
@@ -20,20 +23,20 @@ ProgramBlock::ProgramBlock() :
 	name_(),
 	cmd_(),
 	numProcs_(1),
-	umask_("022"),
+	umask_(0022),
 	workDir_(),
 	autoStart_(false),
 	autoRestart_(false),
 	startRetries_(0),
 	startTime_(0),
-	exitCodes_(1, 0),
+	exitCodes_(),
 	stopSignal_(SIGTERM),
 	stopTime_(0),
 	logOut_("/tmp"),
 	logErr_("/tmp"),
 	env_()
 {
-
+	exitCodes_.insert(0);
 }
 
 ProgramBlock::ProgramBlock(const ProgramBlock &c) :
@@ -96,7 +99,7 @@ const int& ProgramBlock::getNumprocs() const
 }
 
 
-const std::string& ProgramBlock::getUmask() const
+const int& ProgramBlock::getUmask() const
 {
 	return umask_;
 }
@@ -132,7 +135,7 @@ const int& ProgramBlock::getStartTime() const
 }
 
 
-const std::vector<int>& ProgramBlock::getExitCodes() const
+const std::set<int>& ProgramBlock::getExitCodes() const
 {
 	return exitCodes_;
 }
@@ -172,87 +175,115 @@ const std::vector<std::string>& ProgramBlock::getEnv() const
 void ProgramBlock::setState(const int state)
 {
 	state_ = state;
+	std::cout << "setState=" << state_ << "\n";
 }
 
 void ProgramBlock::setProcInfos(const std::vector<ProcInfo> &procInfos)
 {
 	procInfos_ = procInfos;
+	std::cout << "setProcInfos (size)=" << std::to_string(procInfos_.size())
+			<< "\n";
+	for (size_t i = 0; i < procInfos_.size(); ++i) {
+		std::cout << procInfos_[i].toString() << "\n";
+	}
 }
 
 
 void ProgramBlock::setName(const std::string& name)
 {
 	name_ = name;
+	std::cout << "setName=" << name_ << "\n";
 }
 
 void ProgramBlock::setCmd(const std::string& cmd)
 {
 	cmd_ = cmd;
+	std::cout << "setCmd=" << cmd_ << "\n";
 }
 
 void ProgramBlock::setNumProcs(const int numProcs)
 {
 	numProcs_ = numProcs;
+	std::cout << "setNumprocs=" << numProcs_ << "\n";
 }
 
-void ProgramBlock::setUmask(const std::string& uMask)
+void ProgramBlock::setUmask(const int uMask)
 {
 	umask_ = uMask;
+	std::cout << "setumask=" << umask_ << "\n";
 }
 
 void ProgramBlock::setWorkDir(const std::string& workDir)
 {
 	workDir_ = workDir;
+	std::cout << "setworkDir_=" << workDir_ << "\n";
 }
 
 void ProgramBlock::setAutoStart(const bool autoStart)
 {
 	autoStart_ = autoStart;
+	std::cout << "setautostart=" << autoStart_ << "\n";
 }
 
 void ProgramBlock::setAutoRestart(const int autoRestart)
 {
 	autoRestart_ = autoRestart;
+	std::cout << "setAutoRestart=" << autoRestart_ << "\n";
 }
 
 void ProgramBlock::setStartRetries(const int startRetries)
 {
 	startRetries_ = startRetries;
+	std::cout << "setstarretires=" << startRetries_ << "\n";
 }
 
 void ProgramBlock::setStartTime(const int startTime)
 {
 	startTime_ = startTime;
+	std::cout << "setAutostarttime=" << startTime_ << "\n";
 }
 
-void ProgramBlock::setExitCodes(const std::vector<int>& exitCodes)
+void ProgramBlock::setExitCodes(const std::set<int>& exitCodes)
 {
 	exitCodes_ = exitCodes;
+	std::cout << "exitCodes (size)=" << exitCodes_.size() << "\n";
+	int i = 0;
+	for (std::set<int>::const_iterator it = exitCodes_.begin();
+			it != exitCodes_.end(); ++it) {
+		std::cout << "exitcodes[" << i++ << "]" << std::to_string(*it) << "\n";
+	}
 }
 
 void ProgramBlock::setStopSignal(const int stopSignal)
 {
 	stopSignal_ = stopSignal;
+	std::cout << "stopsignal=" << stopSignal_ << "\n";
 }
 
 void ProgramBlock::setStopTime(const int stopTime)
 {
 	stopTime_ = stopTime;
+	std::cout << "stoptime=" << stopTime_ << "\n";
 }
 
 void ProgramBlock::setLogOut(const std::string& logOut)
 {
 	logOut_ = logOut;
+	std::cout << "logout=" << logOut_ << "\n";
 }
 
 void ProgramBlock::setLogErr(const std::string& logErr)
 {
 	logErr_ = logErr;
+	std::cout << "logerr=" << logErr_ << "\n";
 }
 
 void ProgramBlock::setEnv(const std::vector<std::string>& env)
 {
 	env_ = env;
+	std::cout << "env (size)=" << env_.size() << "\n";
+	for (size_t i = 0; i < env_.size(); ++i)
+		std::cout << "env[" << i << "]|" << env_[i] << "|\n";
 }
 
 
@@ -271,21 +302,20 @@ void ProgramBlock::clear()
 	name_ = "";
 	cmd_ = "";
 	numProcs_ = 1;
-	umask_ = "022";
+	umask_ = 0022;
 	workDir_ = "";
 	autoStart_ = false;
 	autoRestart_ = false;
 	startRetries_ = 0;
 	startTime_ = 0;
 	exitCodes_.clear();
-	exitCodes_.push_back(0);
+	exitCodes_.insert(0);
 	stopSignal_ = SIGTERM;
 	logOut_ = "/tmp";
 	logErr_ = "/tmp";
 	env_.clear();
 }
 
-#include <iostream>
 void ProgramBlock::print() const
 {
 	std::cout << "state_=" << state_ << std::endl;
@@ -305,9 +335,9 @@ void ProgramBlock::print() const
 	std::cout << "startTime_=" << startTime_ << std::endl;
 
 	i = 0;
-	for (std::vector<int>::const_iterator it = exitCodes_.begin();
+	for (std::set<int>::const_iterator it = exitCodes_.begin();
 			it != exitCodes_.end(); ++it) {
-		std::cout << "exitCodes_[" << i << "]=" << *it << "\n";
+		std::cout << "exitCodes_[" << i++ << "]=" << *it << "\n";
 	}
 
 	std::cout << "stopSignal_=" << stopSignal_ << std::endl;

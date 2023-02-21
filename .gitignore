@@ -34,3 +34,6 @@ taskmaster
 
 # IDE config files
 .vscode
+
+# Log files
+log/
