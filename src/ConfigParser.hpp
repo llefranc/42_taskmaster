@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/21 15:28:18 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/21 16:29:29 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,9 +83,11 @@ class ConfigParser
 				const std::string &param);
 		void parseAutoStart(ProgramBlock *pb, const std::string &token,
 				const std::string &param);
-		void parseAutoRestart(ProgramBlock *pb, const std::string &token,
+		void parseAutoRestart(ProgramBlock *pb,
+				const std::string &token,
 				const std::string &param);
-		void parseStartRetries(ProgramBlock *pb, const std::string &token,
+		void parseStartRetries(ProgramBlock *pb,
+				const std::string &token,
 				const std::string &param);
 		void parseStartTime(ProgramBlock *pb, const std::string &token,
 				const std::string &param);
