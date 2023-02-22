@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:22 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 15:38:55 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 15:47:54 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include "ProgramBlock.hpp"
 
 extern int g_nbProcessZombies;
+extern int g_isSigHupReceived;
 
 class TaskMaster
 {

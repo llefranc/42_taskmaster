@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 15:24:33 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 15:44:22 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,12 +22,6 @@
 class ConfigParser
 {
 	public:
-
-		static enum {
-			ERR_COULD_NOT_OPEN_FILE = -1,
-			ERR_PARSING = -2,
-		} E_errStatus;
-
 
 		/* ----------------------------------------------- */
 		/* ---------------- COPLIEN FORM ----------------- */
