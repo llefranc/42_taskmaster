@@ -76,7 +76,7 @@ const int& ProgramBlock::getState() const
 	return state_;
 }
 
-const std::vector<ProcInfo>& ProgramBlock::getProcInfos() const
+std::vector<ProcInfo>& ProgramBlock::getProcInfos()
 {
 	return procInfos_;
 }

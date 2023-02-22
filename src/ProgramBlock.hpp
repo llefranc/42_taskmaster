@@ -51,7 +51,7 @@ class ProgramBlock
 		/* ------------------- GETTERS ------------------- */
 
 		const int& getState() const;
-		const std::vector<ProcInfo>& getProcInfos() const;
+		std::vector<ProcInfo>& getProcInfos();
 		const std::string& getName() const;
 		const std::string& getCmd() const;
 		const int& getNumprocs() const;

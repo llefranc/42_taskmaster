@@ -6,18 +6,21 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:24:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/19 19:44:08 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 10:50:36 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
 
-#include "Taskmaster.hpp"
+#include "TaskMaster.hpp"
 
-int main(int ac, char** av)
+// int nbProcessZombies = 0; // Maintenant dans taskmaster
+// int nbZombiesCleaned = 0; // Peut-etre la mettre dans taskmaster
+
+int main(int ac, char** av, char** env)
 {
 	Logger log;
-	TaskMaster taskMaster;
+	TaskMaster taskMaster(env);
 
 	if (ac != 3) {
 		std::cerr << "[ERROR] Wrong number of arguments\n";
@@ -42,6 +45,11 @@ int main(int ac, char** av)
 	} catch (const std::runtime_error &e) {
 		log.eAll(e.what());
 		log.iAll("Taskmaster exited unexpectedly\n");
+
+		// (Lucas to Helene: il vaudrait mieux integrer sterror(errno) au moment
+		// du throw de l'exception, car errno ne sera pas forcement set a chaque
+		// throw)
+		// std::cerr << e.what()  << " : "  << strerror(errno) << std::endl;
 		return 1;
 	}
 

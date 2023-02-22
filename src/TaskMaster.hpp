@@ -1,23 +1,26 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Taskmaster.hpp                                     :+:      :+:    :+:   */
+/*   TaskMaster.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:22 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/19 19:19:36 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 10:48:42 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef TASK_MASTER_HPP
 #define TASK_MASTER_HPP
 
+#include <list>
+
 #include "Logger.hpp"
 #include "ConfigParser.hpp"
+#include "Spawner.hpp"
 #include "ProgramBlock.hpp"
 
-extern int g_nbSigChldReceived;
+extern int g_nbProcessZombies;
 
 class TaskMaster
 {
@@ -25,7 +28,7 @@ class TaskMaster
 		/* ---------------- COPLIEN FORM ----------------- */
 	public:
 
-		TaskMaster();
+		TaskMaster(char **env);
 		~TaskMaster();
 
 	private:
@@ -38,13 +41,13 @@ class TaskMaster
 		/* ----------------------------------------------- */
 		/* ------------------- GETTERS ------------------- */
 
-		Logger* getLogger() const;
+		Logger *getLogger() const;
 
 
 		/* ----------------------------------------------- */
 		/* ------------------- SETTERS ------------------- */
 
-		void setLogger(Logger* log);
+		void setLogger(Logger *log);
 
 
 		/* ----------------------------------------------- */
@@ -61,8 +64,11 @@ class TaskMaster
 
 		Logger* log_;
 		ConfigParser configParser_;
-		std::list<ProgramBlock> pbList_;
+		Spawner spawner_;
 
+		std::list<ProgramBlock> pbList_;
+		std::list<ProgramBlock> pb_;
+		char **env_;
 };
 
 #endif // TASK_MASTER_HPP

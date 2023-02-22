@@ -6,19 +6,23 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 09:50:50 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 10:49:04 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Taskmaster.hpp"
+#include "TaskMaster.hpp"
+#include "poll.h"
+#include "unistd.h"
+#include <string>
+#include <string.h>
 
-
-int g_nbSigChldReceived = 0;
+int g_nbProcessZombies = 0;
 
 /* ----------------------------------------------- */
 /* ---------------- COPLIEN FORM ----------------- */
 
-TaskMaster::TaskMaster() : log_(NULL), configParser_() {}
+TaskMaster::TaskMaster(char **env) :
+		log_(NULL), configParser_(), spawner_(), env_(env) {}
 
 TaskMaster::~TaskMaster() {}
 
@@ -26,7 +30,7 @@ TaskMaster::~TaskMaster() {}
 /* ----------------------------------------------- */
 /* ------------------- GETTERS ------------------- */
 
-Logger* TaskMaster::getLogger() const
+Logger *TaskMaster::getLogger() const
 {
 	return log_;
 }
@@ -38,6 +42,7 @@ Logger* TaskMaster::getLogger() const
 void TaskMaster::setLogger(Logger* log)
 {
 	log_ = log;
+	spawner_.setLogger(log);
 }
 
 
@@ -55,6 +60,37 @@ void TaskMaster::initConfigParser(const std::string &path)
 	}
 }
 
-void TaskMaster::shellRoutine() {
+void TaskMaster::shellRoutine()
+{
+	int pollRet;
+	char buf[256];
+	struct pollfd pfd;
+
+	pfd.fd = 0;
+	pfd.events = POLLIN;
+
 	log_->iUser("Launching shell\n");
+	write(1, ">>>> ", sizeof(">>>> "));
+
+	while (true)
+	{
+		pollRet = poll(&pfd, 1, 0);
+		bzero(buf, sizeof(buf));
+		if (pollRet & POLLIN)
+		{
+			int nb = read(0, buf, sizeof(buf));
+			write(1, ">>>> ", sizeof(">>>> "));
+			(void)nb;
+			std::string shellLine(buf);
+			if (!shellLine.find("start"))
+				spawner_.startProgramBlock(*(pb_.begin()));
+		}
+		else if (pollRet & (POLLERR | POLLNVAL))
+		{
+			throw std::runtime_error(std::string("Poll failed: ") + strerror(errno));
+		}
+		else
+		{
+		}
+	}
 }

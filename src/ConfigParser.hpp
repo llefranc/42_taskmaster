@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 10:02:45 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 10:47:55 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,11 +64,10 @@ class ConfigParser
 		friend void swap(ConfigParser &a, ConfigParser &b);
 
 
-	private:
-
 		/* ----------------------------------------------- */
 		/* --------------- PRIVATE METHODS --------------- */
 
+	private:
 
 		void checkFileOpening(std::ifstream *ifs,
 				const std::string& path);
@@ -120,6 +119,8 @@ class ConfigParser
 
 		/* ----------------------------------------------- */
 		/* ----------------- ATTRIBUTES ------------------ */
+
+	private:
 
 		typedef void (ConfigParser::*methodPtr)(ProgramBlock *,
 				const std::string &, const std::string &);
