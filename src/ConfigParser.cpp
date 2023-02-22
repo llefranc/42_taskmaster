@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 10:02:05 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 10:11:45 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,11 +114,12 @@ std::list<ProgramBlock> ConfigParser::load(const std::string &cfPath)
 
 	while (std::getline(ifs, line)) {
 		++lineNb;
-		if (line[0] == '#')
-			continue;
 		revWsTrim(line);
 
 		if (!line.empty()) {
+			if (line[0] == '#')
+				continue;
+
 			if (!inProgramBlock) {
 				parseProgramName(pbList, &pb, line);
 				inProgramBlock = true;
@@ -195,8 +196,8 @@ void ConfigParser::parseProgramName(const std::list<ProgramBlock> &pbList,
 void ConfigParser::parseToken(ProgramBlock *pb, const std::string &line)
 {
 	methodPtr m;
-	std::string token;
 	std::string tmpT;
+	std::string token;
 	std::string param;
 
 	for (size_t i = 0; i < (sizeof(tokMeths_) / sizeof(*tokMeths_)); ++i) {
