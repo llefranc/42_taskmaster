@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/21 16:29:29 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 10:02:45 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,8 @@ class ConfigParser
 
 		void checkFileOpening(std::ifstream *ifs,
 				const std::string& path);
+		void parseProgramName(const std::list<ProgramBlock> &pbList,
+				ProgramBlock *pb, const std::string &line);
 		void parseToken(ProgramBlock *pb, const std::string &line);
 		void parseCmd(ProgramBlock *pb, const std::string &token,
 				const std::string &param);
@@ -103,6 +105,8 @@ class ConfigParser
 				const std::string &param);
 		void parseEnv(ProgramBlock *pb, const std::string &token,
 				const std::string &param);
+		void savePb(std::list<ProgramBlock> *pbList,
+			ProgramBlock *pb, bool *inProgramBlock);
 		bool isDigitStr(const std::string &str);
 		bool isOctalStr(const std::string &str);
 		std::vector<std::string> splitStr(const std::string &param,

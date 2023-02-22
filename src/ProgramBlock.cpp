@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:17:16 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/21 15:08:10 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 09:54:22 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -175,115 +175,115 @@ const std::vector<std::string>& ProgramBlock::getEnv() const
 void ProgramBlock::setState(const int state)
 {
 	state_ = state;
-	std::cout << "setState=" << state_ << "\n";
+	// std::cout << "setState=" << state_ << "\n";
 }
 
 void ProgramBlock::setProcInfos(const std::vector<ProcInfo> &procInfos)
 {
 	procInfos_ = procInfos;
-	std::cout << "setProcInfos (size)=" << std::to_string(procInfos_.size())
-			<< "\n";
-	for (size_t i = 0; i < procInfos_.size(); ++i) {
-		std::cout << procInfos_[i].toString() << "\n";
-	}
+	// std::cout << "setProcInfos (size)=" << std::to_string(procInfos_.size())
+// 			<< "\n";
+// 	for (size_t i = 0; i < procInfos_.size(); ++i) {
+// 		std::cout << procInfos_[i].toString() << "\n";
+// 	}
 }
 
 
 void ProgramBlock::setName(const std::string& name)
 {
 	name_ = name;
-	std::cout << "setName=" << name_ << "\n";
+	// std::cout << "setName=" << name_ << "\n";
 }
 
 void ProgramBlock::setCmd(const std::string& cmd)
 {
 	cmd_ = cmd;
-	std::cout << "setCmd=" << cmd_ << "\n";
+	// std::cout << "setCmd=" << cmd_ << "\n";
 }
 
 void ProgramBlock::setNumProcs(const int numProcs)
 {
 	numProcs_ = numProcs;
-	std::cout << "setNumprocs=" << numProcs_ << "\n";
+	// std::cout << "setNumprocs=" << numProcs_ << "\n";
 }
 
 void ProgramBlock::setUmask(const int uMask)
 {
 	umask_ = uMask;
-	std::cout << "setumask=" << umask_ << "\n";
+	// std::cout << "setumask=" << umask_ << "\n";
 }
 
 void ProgramBlock::setWorkDir(const std::string& workDir)
 {
 	workDir_ = workDir;
-	std::cout << "setworkDir_=" << workDir_ << "\n";
+	// std::cout << "setworkDir_=" << workDir_ << "\n";
 }
 
 void ProgramBlock::setAutoStart(const bool autoStart)
 {
 	autoStart_ = autoStart;
-	std::cout << "setautostart=" << autoStart_ << "\n";
+	// std::cout << "setautostart=" << autoStart_ << "\n";
 }
 
 void ProgramBlock::setAutoRestart(const int autoRestart)
 {
 	autoRestart_ = autoRestart;
-	std::cout << "setAutoRestart=" << autoRestart_ << "\n";
+	// std::cout << "setAutoRestart=" << autoRestart_ << "\n";
 }
 
 void ProgramBlock::setStartRetries(const int startRetries)
 {
 	startRetries_ = startRetries;
-	std::cout << "setstarretires=" << startRetries_ << "\n";
+	// std::cout << "setstarretires=" << startRetries_ << "\n";
 }
 
 void ProgramBlock::setStartTime(const int startTime)
 {
 	startTime_ = startTime;
-	std::cout << "setAutostarttime=" << startTime_ << "\n";
+	// std::cout << "setAutostarttime=" << startTime_ << "\n";
 }
 
 void ProgramBlock::setExitCodes(const std::set<int>& exitCodes)
 {
 	exitCodes_ = exitCodes;
-	std::cout << "exitCodes (size)=" << exitCodes_.size() << "\n";
-	int i = 0;
-	for (std::set<int>::const_iterator it = exitCodes_.begin();
-			it != exitCodes_.end(); ++it) {
-		std::cout << "exitcodes[" << i++ << "]" << std::to_string(*it) << "\n";
-	}
+	// std::cout << "exitCodes (size)=" << exitCodes_.size() << "\n";
+	// int i = 0;
+	// for (std::set<int>::const_iterator it = exitCodes_.begin();
+	// 		it != exitCodes_.end(); ++it) {
+	// 	std::cout << "exitcodes[" << i++ << "]" << std::to_string(*it) << "\n";
+	// }
 }
 
 void ProgramBlock::setStopSignal(const int stopSignal)
 {
 	stopSignal_ = stopSignal;
-	std::cout << "stopsignal=" << stopSignal_ << "\n";
+	// std::cout << "stopsignal=" << stopSignal_ << "\n";
 }
 
 void ProgramBlock::setStopTime(const int stopTime)
 {
 	stopTime_ = stopTime;
-	std::cout << "stoptime=" << stopTime_ << "\n";
+	// std::cout << "stoptime=" << stopTime_ << "\n";
 }
 
 void ProgramBlock::setLogOut(const std::string& logOut)
 {
 	logOut_ = logOut;
-	std::cout << "logout=" << logOut_ << "\n";
+	// std::cout << "logout=" << logOut_ << "\n";
 }
 
 void ProgramBlock::setLogErr(const std::string& logErr)
 {
 	logErr_ = logErr;
-	std::cout << "logerr=" << logErr_ << "\n";
+	// std::cout << "logerr=" << logErr_ << "\n";
 }
 
 void ProgramBlock::setEnv(const std::vector<std::string>& env)
 {
 	env_ = env;
-	std::cout << "env (size)=" << env_.size() << "\n";
-	for (size_t i = 0; i < env_.size(); ++i)
-		std::cout << "env[" << i << "]|" << env_[i] << "|\n";
+	// std::cout << "env (size)=" << env_.size() << "\n";
+	// for (size_t i = 0; i < env_.size(); ++i)
+	// 	std::cout << "env[" << i << "]|" << env_[i] << "|\n";
 }
 
 
@@ -327,7 +327,7 @@ void ProgramBlock::print() const
 	std::cout << "name_=" << name_ << std::endl;
 	std::cout << "cmd_=" << cmd_ << std::endl;
 	std::cout << "numProcs_=" << numProcs_ << std::endl;
-	std::cout << "umask_=" << umask_ << std::endl;
+	std::cout << "umask_=" << std::oct << umask_ << std::endl;
 	std::cout << "workDir_=" << workDir_ << std::endl;
 	std::cout << "autoStart_=" << autoStart_ << std::endl;
 	std::cout << "autoRestart_=" << autoRestart_ << std::endl;
@@ -347,7 +347,7 @@ void ProgramBlock::print() const
 	i = 0;
 	for (std::vector<std::string>::const_iterator it = env_.begin();
 			it != env_.end(); ++it) {
-		std::cout << "env_[" << i << "]=" << *it << "\n";
+		std::cout << "env_[" << i++ << "]=" << *it << "\n";
 	}
 	std::cout << "--------------------------" << std::endl;
 }

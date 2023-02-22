@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/21 16:03:33 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 10:02:05 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,10 +17,12 @@
 #include <fstream>
 #include <algorithm>
 #include <ctype.h>
+// #include <iostream>
 
 #include "ProgramBlock.hpp"
 
 #define MAX_LINE_LEN 1024
+#define MAX_NAME_LEN 20
 #define MAX_NUMPROCS 100
 #define MAX_STARTRETRIES 100
 #define MAX_STARTTIME 86400
@@ -100,8 +102,96 @@ static inline std::string quotesTrim(const std::string &str)
 /* ----------------------------------------------- */
 /* ------------------- METHODS ------------------- */
 
+std::list<ProgramBlock> ConfigParser::load(const std::string &cfPath)
+{
+	ProgramBlock pb;
+	std::list<ProgramBlock> pbList;
+	bool inProgramBlock = false;
+	std::string line;
+	std::ifstream ifs(cfPath);
 
-#include <iostream>
+	checkFileOpening(&ifs, cfPath);
+
+	while (std::getline(ifs, line)) {
+		++lineNb;
+		if (line[0] == '#')
+			continue;
+		revWsTrim(line);
+
+		if (!line.empty()) {
+			if (!inProgramBlock) {
+				parseProgramName(pbList, &pb, line);
+				inProgramBlock = true;
+			} else {
+				parseToken(&pb, line);
+			}
+		} else if (line.empty() && inProgramBlock) {
+			savePb(&pbList, &pb, &inProgramBlock);
+		}
+	}
+	if (inProgramBlock)
+		savePb(&pbList, &pb, &inProgramBlock);
+
+	if (pbList.empty())
+		throw std::runtime_error("Config file is empty\n");
+
+	ifs.close();
+	return pbList;
+}
+
+
+/* ----------------------------------------------- */
+/* --------------- PRIVATE METHODS --------------- */
+
+void ConfigParser::checkFileOpening(std::ifstream *ifs, const std::string& path)
+{
+	ifs->seekg(0, std::ios::end);
+	if (!ifs->is_open() || !ifs->good()) {
+		throw std::runtime_error("Failed to open config file (path: "
+			+ path + ")\n");
+	}
+	ifs->clear();
+	ifs->seekg(0);
+}
+
+void ConfigParser::parseProgramName(const std::list<ProgramBlock> &pbList,
+		ProgramBlock *pb, const std::string &line)
+{
+	// std::cout << "Parsing program name: |" << line << "|\n";
+	size_t i = 0;
+	std::string name;
+
+	if (line.empty() || line[0] != '[' || line[line.size() - 1] != ']') {
+		throw std::runtime_error("Program name: must be surrounded by "
+				"brackets - e.g. [name] " + lNbStr());
+	}
+
+	/* -2 for '[' and ']' characs */
+	name = line.substr(1, line.size() - 2);
+
+	if (name.empty() || name.size() > MAX_NAME_LEN) {
+		throw std::runtime_error("Program name: between 1 and "
+				+ std::to_string(MAX_NAME_LEN) + " characters "
+				"- e.g. [1-20 characs] " + lNbStr());
+	}
+	while (i < name.size()) {
+		if (!isalnum(name[i])) {
+			throw std::runtime_error("Program name: only "
+					"alphanumeric characters between "
+					"brackets - e.g. [name] " + lNbStr());
+		}
+		++i;
+	}
+	for (std::list<ProgramBlock>::const_iterator it = pbList.begin();
+	    it != pbList.end(); ++it) {
+		if (it->getName() == name) {
+			throw std::runtime_error("Program name: already used by"
+					" another program block " + lNbStr());
+		}
+	}
+	pb->setName(name);
+}
+
 void ConfigParser::parseToken(ProgramBlock *pb, const std::string &line)
 {
 	methodPtr m;
@@ -132,60 +222,10 @@ void ConfigParser::parseToken(ProgramBlock *pb, const std::string &line)
 	throw std::runtime_error("Error while parsing key " + lNbStr());
 }
 
-std::list<ProgramBlock> ConfigParser::load(const std::string &cfPath)
-{
-	ProgramBlock pb;
-	std::list<ProgramBlock> pbList;
-	bool inProgramBlock = false;
-	std::string line;
-	std::ifstream ifs(cfPath);
-
-	checkFileOpening(&ifs, cfPath);
-
-	while (std::getline(ifs, line)) {
-		++lineNb;
-		if (line[0] == '#')
-			continue;
-		revWsTrim(line);
-		if (!line.empty()) {
-			parseToken(&pb, line);
-		}
-	}
-
-	if (inProgramBlock) {
-		if (pb.isCorrect()) {
-			pbList.push_back(pb);
-		} else {
-			throw std::runtime_error(pb.getName() + " is missing "
-					"cmd line\n");
-		}
-	}
-	if (pbList.empty())
-		throw std::runtime_error("Config file is empty\n");
-
-	ifs.close();
-	return pbList;
-}
-
-
-/* ----------------------------------------------- */
-/* --------------- PRIVATE METHODS --------------- */
-
-void ConfigParser::checkFileOpening(std::ifstream *ifs, const std::string& path)
-{
-	ifs->seekg(0, std::ios::end);
-	if (!ifs->is_open() || !ifs->good()) {
-		throw std::runtime_error("Failed to open config file (path: "
-			+ path + ")\n");
-	}
-	ifs->clear();
-	ifs->seekg(0);
-}
-
 void ConfigParser::parseCmd(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 	if (param.size() > MAX_LINE_LEN) {
 		throw std::runtime_error(token + ": line too long, max "
 				+ std::to_string(MAX_LINE_LEN) + " characters "
@@ -197,7 +237,7 @@ void ConfigParser::parseCmd(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseNumProcs(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 	int val;
 	bool outOfRange = false;
 
@@ -222,7 +262,7 @@ void ConfigParser::parseUmask(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
 	int tmp;
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 
 	if (param.size() == 3 && isOctalStr(param)) {
 		tmp = stoi(param, 0, 8);
@@ -236,7 +276,7 @@ void ConfigParser::parseUmask(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseWorkingDir(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 
 	if (param.size() > MAX_LINE_LEN) {
 		throw std::runtime_error(token + ": line too long, max "
@@ -249,7 +289,7 @@ void ConfigParser::parseWorkingDir(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseAutoStart(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 
 	if (param == "false") {
 		pb->setAutoStart(false);
@@ -264,7 +304,7 @@ void ConfigParser::parseAutoStart(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseAutoRestart(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 
 	if (param == "false") {
 		pb->setAutoRestart(ProgramBlock::AUTO_FALSE);
@@ -281,7 +321,7 @@ void ConfigParser::parseAutoRestart(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseStartRetries(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 	int val;
 	bool outOfRange = false;
 
@@ -305,7 +345,7 @@ void ConfigParser::parseStartRetries(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseStartTime(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 	int val;
 	bool outOfRange = false;
 
@@ -329,7 +369,7 @@ void ConfigParser::parseStartTime(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseExitCodes(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 	int nb;
 	bool err = false;
 	std::set<int> s;
@@ -360,7 +400,7 @@ void ConfigParser::parseExitCodes(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseStopSignal(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 	static const std::pair<int, std::string> p[7] = {
 		{1, "HUP"},
 		{2, "INT"},
@@ -384,7 +424,7 @@ void ConfigParser::parseStopSignal(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseStopTime(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 	int val;
 	bool outOfRange = false;
 
@@ -408,7 +448,7 @@ void ConfigParser::parseStopTime(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseStdout(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 	if (param.size() > MAX_LINE_LEN) {
 		throw std::runtime_error(token + ": line too long, max "
 				+ std::to_string(MAX_LINE_LEN) + " characters "
@@ -420,7 +460,7 @@ void ConfigParser::parseStdout(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseStderr(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 	if (param.size() > MAX_LINE_LEN) {
 		throw std::runtime_error(token + ": line too long, max "
 				+ std::to_string(MAX_LINE_LEN) + " characters "
@@ -432,7 +472,7 @@ void ConfigParser::parseStderr(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseEnv(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	std::cout << "Parsing " << token << "\n";
+	// std::cout << "Parsing " << token << "\n";
 	std::vector<std::string> vars;
 	std::pair<std::string, std::string> p;
 	std::map<std::string, std::string>m;
@@ -467,6 +507,19 @@ err_parsing:
 			"variable(s) of form KEY=\"value\" (value must be "
 			"between quotes) separated by ',' character - e.g. "
 			"KEY1=\"value1\",KEY2=\"value2\" " + lNbStr());
+}
+
+void ConfigParser::savePb(std::list<ProgramBlock> *pbList, ProgramBlock *pb,
+		bool *inProgramBlock)
+{
+	if (pb->isCorrect()) {
+		*inProgramBlock = false;
+		pbList->push_back(*pb);
+		pb->clear();
+	} else {
+		throw std::runtime_error("Program block [" + pb->getName()
+				+ "] is missing cmd\n");
+	}
 }
 
 bool ConfigParser::isDigitStr(const std::string &str)
