@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:17:16 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 09:54:22 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 12:03:24 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -322,12 +322,12 @@ void ProgramBlock::print() const
 	int i = 0;
 	for (std::vector<ProcInfo>::const_iterator it = procInfos_.begin();
 			it != procInfos_.end(); ++it, ++i) {
-		std::cout << "procInfo[" << i++ << "]=" << it->toString() << "\n";
+		std::cout << "procInfo[" << i << "]=" << it->toString() << "\n";
 	}
 	std::cout << "name_=" << name_ << std::endl;
 	std::cout << "cmd_=" << cmd_ << std::endl;
 	std::cout << "numProcs_=" << numProcs_ << std::endl;
-	std::cout << "umask_=" << std::oct << umask_ << std::endl;
+	std::cout << "umask_=" << std::oct << umask_ << std::dec << std::endl;
 	std::cout << "workDir_=" << workDir_ << std::endl;
 	std::cout << "autoStart_=" << autoStart_ << std::endl;
 	std::cout << "autoRestart_=" << autoRestart_ << std::endl;
@@ -336,8 +336,8 @@ void ProgramBlock::print() const
 
 	i = 0;
 	for (std::set<int>::const_iterator it = exitCodes_.begin();
-			it != exitCodes_.end(); ++it) {
-		std::cout << "exitCodes_[" << i++ << "]=" << *it << "\n";
+			it != exitCodes_.end(); ++it, ++i) {
+		std::cout << "exitCodes_[" << i << "]=" << *it << "\n";
 	}
 
 	std::cout << "stopSignal_=" << stopSignal_ << std::endl;
@@ -346,8 +346,8 @@ void ProgramBlock::print() const
 
 	i = 0;
 	for (std::vector<std::string>::const_iterator it = env_.begin();
-			it != env_.end(); ++it) {
-		std::cout << "env_[" << i++ << "]=" << *it << "\n";
+			it != env_.end(); ++it, ++i) {
+		std::cout << "env_[" << i << "]=" << *it << "\n";
 	}
 	std::cout << "--------------------------" << std::endl;
 }

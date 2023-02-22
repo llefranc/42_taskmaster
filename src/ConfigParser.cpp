@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 10:11:45 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 11:51:32 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,6 +136,7 @@ std::list<ProgramBlock> ConfigParser::load(const std::string &cfPath)
 	if (pbList.empty())
 		throw std::runtime_error("Config file is empty\n");
 
+	generateProcInfos(&pbList);
 	ifs.close();
 	return pbList;
 }
@@ -520,6 +521,21 @@ void ConfigParser::savePb(std::list<ProgramBlock> *pbList, ProgramBlock *pb,
 	} else {
 		throw std::runtime_error("Program block [" + pb->getName()
 				+ "] is missing cmd\n");
+	}
+}
+
+void ConfigParser::generateProcInfos(std::list<ProgramBlock> *pbList)
+{
+	std::vector<ProcInfo> vPis;
+
+	for (std::list<ProgramBlock>::iterator it = pbList->begin();
+	    it != pbList->end(); ++it) {
+		vPis.clear();
+		for (int i = 0; i < it->getNumprocs(); ++i) {
+			ProcInfo pi(it->getName() + + "_" +std::to_string(i));
+			vPis.push_back(pi);
+		}
+		it->setProcInfos(vPis);
 	}
 }
 

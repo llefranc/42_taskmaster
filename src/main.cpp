@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:24:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 10:50:36 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 12:30:16 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 // int nbProcessZombies = 0; // Maintenant dans taskmaster
 // int nbZombiesCleaned = 0; // Peut-etre la mettre dans taskmaster
 
-int main(int ac, char** av, char** env)
+int main(int ac, char **av, char **env)
 {
 	Logger log;
 	TaskMaster taskMaster(env);

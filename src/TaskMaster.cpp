@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 10:49:04 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 12:56:58 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,7 @@ void TaskMaster::initConfigParser(const std::string &path)
 	log_->iAll("Parsing configuration file (path: " + path + ")\n");
 	pbList_ = configParser_.load(path);
 	log_->iAll("Configuration file successfully loaded\n");
+	
 	for (std::list<ProgramBlock>::iterator it = pbList_.begin();
 	    it != pbList_.end(); ++it) {
 		it->print();
@@ -72,25 +73,31 @@ void TaskMaster::shellRoutine()
 	log_->iUser("Launching shell\n");
 	write(1, ">>>> ", sizeof(">>>> "));
 
-	while (true)
-	{
-		pollRet = poll(&pfd, 1, 0);
-		bzero(buf, sizeof(buf));
-		if (pollRet & POLLIN)
+	try {
+		while (true)
 		{
-			int nb = read(0, buf, sizeof(buf));
-			write(1, ">>>> ", sizeof(">>>> "));
-			(void)nb;
-			std::string shellLine(buf);
-			if (!shellLine.find("start"))
-				spawner_.startProgramBlock(*(pb_.begin()));
+			pollRet = poll(&pfd, 1, 0);
+			bzero(buf, sizeof(buf));
+			if (pollRet & POLLIN)
+			{
+				int nb = read(0, buf, sizeof(buf));
+				write(1, ">>>> ", sizeof(">>>> "));
+				(void)nb;
+				std::string shellLine(buf);
+				if (!shellLine.find("start"))
+					spawner_.startProgramBlock(*(pbList_.begin()));
+			}
+			else if (pollRet & (POLLERR | POLLNVAL))
+			{
+				throw std::runtime_error(std::string("Poll failed: ") + strerror(errno));
+			}
+			else
+			{
+			}
 		}
-		else if (pollRet & (POLLERR | POLLNVAL))
-		{
-			throw std::runtime_error(std::string("Poll failed: ") + strerror(errno));
-		}
-		else
-		{
-		}
+	} catch (const std::exception &e) {
+
+		throw;
 	}
+
 }

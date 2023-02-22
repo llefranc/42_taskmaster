@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 10:47:55 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 11:41:20 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,6 +106,7 @@ class ConfigParser
 				const std::string &param);
 		void savePb(std::list<ProgramBlock> *pbList,
 			ProgramBlock *pb, bool *inProgramBlock);
+		void generateProcInfos(std::list<ProgramBlock> *pbList);
 		bool isDigitStr(const std::string &str);
 		bool isOctalStr(const std::string &str);
 		std::vector<std::string> splitStr(const std::string &param,

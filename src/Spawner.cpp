@@ -65,16 +65,17 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 			std::string errFile = pInfo.getName() + "_" + pInfo.getHash() + "_stderr.txt";
 			std::string outPath(prg.getLogOut() + "/" + outFile);
 			std::string errPath(prg.getLogErr() + "/" + errFile);
+
 			if ((fd = open(outPath.c_str(), O_CREAT | O_APPEND | O_WRONLY)) < 0)
-				throw std::runtime_error("error open " + outFile);
+				throw std::runtime_error("error open " + outPath + "\n");
 			if ((fderr = open(errPath.c_str(), O_CREAT | O_APPEND | O_WRONLY)) < 0)
-				throw std::runtime_error("error open " + errFile);
+				throw std::runtime_error("error open " + errPath + "\n");
 
 			// redirection out and err into log files
 			if (dup2(fd, STDOUT_FILENO) < 0)
-				throw std::runtime_error("premier dup");
+				throw std::runtime_error("premier dup\n");
 			if (dup2(fderr, STDERR_FILENO) < 0)
-				throw std::runtime_error("deuxieme dup");
+				throw std::runtime_error("deuxieme dup\n");
 
 			// change working directory if specified
 			if (prg.getWorkDir().empty() == false)
@@ -84,7 +85,7 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 			char **env = setExecveEnv(prg.getEnv());
 			char **arg = (char**)malloc(sizeof(char*));
 			bzero(arg, sizeof(char*));
-			if (execve("script.sh", arg, env) < 0)
+			if (execve(prg.getCmd().c_str(), arg, env) < 0)
 			{
 				// free arg and env + redirect stdout and stderr back
 				freeExecveArg(arg, env, prg.getEnv().size());
@@ -92,7 +93,9 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 				dup2(oldErr, STDERR_FILENO);
 				close(fd);
 				close(fderr);
-				throw std::runtime_error(std::string("Execve failed: ") + strerror(errno));
+				// TODO: il y a toujours 2 process. Je pense il faut exit avec un
+				// code  d'erreur !!!!!
+				throw std::runtime_error(std::string("Execve failed: ") + strerror(errno) + "\n");
 			}
 		}
 		else if (pid > 0)
@@ -106,7 +109,7 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 		}
 		else
 		{
-			throw std::runtime_error(std::string("Fork failed:") + strerror(errno));
+			throw std::runtime_error(std::string("Fork failed:") + strerror(errno) + "\n");
 		}
 	}
 	catch (std::runtime_error & e)
@@ -121,11 +124,12 @@ char** Spawner::setExecveEnv(const std::vector<std::string> &vecEnv)
 	int nbEnv = vecEnv.size();
 	env = (char**)malloc(sizeof(char*) * (nbEnv + 1));
 	if (env == NULL)
-		throw std::runtime_error("Malloc failed in setExecveEnv");
+		throw std::runtime_error("Malloc failed in setExecveEnv\n");
 
 	bzero(env, sizeof(*env));
 	for (int i = 0; i < nbEnv; i++)
 	{
+		// env[1] ????? env[i] plutot non ?
 		env[1] = strdup(vecEnv[i].c_str());
 	}
 

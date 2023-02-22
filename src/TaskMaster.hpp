@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:22 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 10:48:42 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 12:00:45 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,7 +67,6 @@ class TaskMaster
 		Spawner spawner_;
 
 		std::list<ProgramBlock> pbList_;
-		std::list<ProgramBlock> pb_;
 		char **env_;
 };
 
