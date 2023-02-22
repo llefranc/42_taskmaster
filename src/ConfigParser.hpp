@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 11:41:20 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 15:24:33 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,8 @@ class ConfigParser
 		/* ----------------------------------------------- */
 		/* ---------------- COPLIEN FORM ----------------- */
 
-		ConfigParser();
+		ConfigParser() = delete;
+		ConfigParser(char **env);
 		ConfigParser(const std::string &cfPath);
 		ConfigParser(const ConfigParser &c);
 		~ConfigParser();
@@ -127,6 +128,8 @@ class ConfigParser
 				const std::string &, const std::string &);
 
 		std::string cfPath_;
+		std::vector<std::string> vecParentEnv_;
+		std::map<std::string, std::string> mapParentEnv_;
 		const std::pair<std::string, methodPtr> tokMeths_[14] = {
 			std::make_pair<std::string, methodPtr>("cmd=",
 					&ConfigParser::parseCmd),

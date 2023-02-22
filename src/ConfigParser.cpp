@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 11:51:32 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 15:21:46 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 #include <fstream>
 #include <algorithm>
 #include <ctype.h>
-// #include <iostream>
+#include <iostream>
 
 #include "ProgramBlock.hpp"
 
@@ -39,7 +39,26 @@ static int lineNb = 0;
 /* ----------------------------------------------- */
 /* ---------------- COPLIEN FORM ----------------- */
 
-ConfigParser::ConfigParser() : cfPath_() {}
+ConfigParser::ConfigParser(char **env) :
+	cfPath_(), vecParentEnv_(), mapParentEnv_()
+{
+	int i = -1;
+	int j;
+	std::string var;
+	std::pair<std::string, std::string> p;
+
+	while (env[++i]) {
+		j = 0;
+		var = std::string(env[i]);
+		vecParentEnv_.push_back(var);
+
+		while (var[j] && var[j] != '=')
+			++j;
+		p.first = var.substr(0, j);
+		p.second = "\"" + var.substr(j + 1, std::string::npos) + "\"";
+		mapParentEnv_.insert(p);
+	}
+}
 
 ConfigParser::ConfigParser(const std::string &cfPath) : cfPath_(cfPath) {}
 
@@ -477,7 +496,7 @@ void ConfigParser::parseEnv(ProgramBlock *pb, const std::string &token,
 	// std::cout << "Parsing " << token << "\n";
 	std::vector<std::string> vars;
 	std::pair<std::string, std::string> p;
-	std::map<std::string, std::string>m;
+	std::map<std::string, std::string>m = mapParentEnv_;
 	std::pair<std::map<std::string, std::string>::iterator, bool> ret;
 
 	vars = splitEnv(param);
@@ -516,6 +535,8 @@ void ConfigParser::savePb(std::list<ProgramBlock> *pbList, ProgramBlock *pb,
 {
 	if (pb->isCorrect()) {
 		*inProgramBlock = false;
+		if (pb->getEnv().empty())
+			pb->setEnv(vecParentEnv_);
 		pbList->push_back(*pb);
 		pb->clear();
 	} else {
@@ -591,7 +612,7 @@ int ConfigParser::checkEnvKey(const std::string &varKey)
 	if (isdigit(varKey[0]))
 		return -1;
 	while (varKey[++i]) {
-		if (!isalnum(varKey[i]))
+		if (!(isalnum(varKey[i]) || varKey[i] == '_'))
 			return -1;
 	}
 	return 0;
@@ -630,7 +651,7 @@ std::pair<std::string, std::string> ConfigParser::splitEnvVar(
 	size_t i = 0;
 	std::pair<std::string, std::string> p;
 
-	while (var[i] && isalnum(var[i]))
+	while (var[i] && (isalnum(var[i]) || var[i] == '_'))
 		++i;
 	if (var[i] == '=') {
 		p.first = var.substr(0, i);

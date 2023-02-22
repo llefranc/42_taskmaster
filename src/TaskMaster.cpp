@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 12:56:58 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 15:38:40 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ int g_nbProcessZombies = 0;
 /* ---------------- COPLIEN FORM ----------------- */
 
 TaskMaster::TaskMaster(char **env) :
-		log_(NULL), configParser_(), spawner_(), env_(env) {}
+		log_(NULL), configParser_(env), spawner_() {}
 
 TaskMaster::~TaskMaster() {}
 
@@ -54,7 +54,7 @@ void TaskMaster::initConfigParser(const std::string &path)
 	log_->iAll("Parsing configuration file (path: " + path + ")\n");
 	pbList_ = configParser_.load(path);
 	log_->iAll("Configuration file successfully loaded\n");
-	
+
 	for (std::list<ProgramBlock>::iterator it = pbList_.begin();
 	    it != pbList_.end(); ++it) {
 		it->print();
