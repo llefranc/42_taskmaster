@@ -6,13 +6,14 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 15:55:16 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/23 15:24:59 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "TaskMaster.hpp"
-#include "poll.h"
-#include "unistd.h"
+
+#include <poll.h>
+#include <unistd.h>
 #include <string>
 #include <string.h>
 
@@ -54,49 +55,186 @@ void TaskMaster::initConfigParser(const std::string &path)
 	pbList_ = configParser_.load(path);
 	log_->iAll("Configuration file successfully loaded\n");
 
-	for (std::list<ProgramBlock>::iterator it = pbList_.begin();
-	    it != pbList_.end(); ++it) {
-		it->print();
-	}
+	// for (std::list<ProgramBlock>::iterator it = pbList_.begin();
+	//     it != pbList_.end(); ++it) {
+	// 	it->print();
+	// }
 }
 
 void TaskMaster::shellRoutine()
 {
 	int pollRet;
-	char buf[256];
-	struct pollfd pfd;
-
-	pfd.fd = 0;
-	pfd.events = POLLIN;
+	char buf[256] = {};
+	std::vector<std::string> tokens;
+	struct pollfd pfd = {.fd = 0, .events = POLLIN, .revents = 0};
 
 	log_->iUser("Launching shell\n");
-	write(1, ">>>> ", sizeof(">>>> "));
+	log_->iUser("------------------------\n");
+	log_->iUser("taskmaster> ");
 
-	try {
-		while (true)
+	while (true)
+	{
+		pollRet = poll(&pfd, 1, 0);
+		if (pollRet & POLLIN)
 		{
-			pollRet = poll(&pfd, 1, 0);
+			if (read(0, buf, sizeof(buf)) == -1) {
+				throw std::runtime_error("Read failed: "
+						+ std::string(strerror(errno))
+						+  "\n");
+			}
+			tokens = splitEntry(buf);
+			if (execCmd(tokens) == SHELL_EXIT)
+				break;
+
+			log_->iUser("taskmaster> ");
 			bzero(buf, sizeof(buf));
-			if (pollRet & POLLIN)
-			{
-				int nb = read(0, buf, sizeof(buf));
-				write(1, ">>>> ", sizeof(">>>> "));
-				(void)nb;
-				std::string shellLine(buf);
-				if (!shellLine.find("start"))
-					spawner_.startProgramBlock(*(pbList_.begin()));
-			}
-			else if (pollRet & (POLLERR | POLLNVAL))
-			{
-				throw std::runtime_error(std::string("Poll failed: ") + strerror(errno));
-			}
-			else
-			{
+		}
+		else if (pollRet & (POLLERR | POLLNVAL)) {
+			throw std::runtime_error(std::string("Poll failed: ")
+					+ strerror(errno));
+		}
+	}
+	log_->iAll("Quitting taskmaster\n");
+}
+
+
+/* ----------------------------------------------- */
+/* --------------- PRIVATE METHODS --------------- */
+
+std::vector<std::string> TaskMaster::splitEntry(const std::string line)
+{
+	int i = 0;
+	int start;
+	std::vector<std::string> v;
+
+	while (line[i]) {
+		while (line[i] && isspace(line[i]))
+			++i;
+		start = i;
+		while (line[i] && !isspace(line[i]))
+			++i;
+		if (start != i)
+			v.push_back(line.substr(start, i - start));
+		if (v.size() > 2)
+			break;
+	}
+	return v;
+}
+
+int TaskMaster::execCmd(const std::vector<std::string> &tokens)
+{
+	methodPtr m;
+
+	if (tokens.size() > 0) {
+		for (size_t i = 0; i < sizeof(cmdMeths_) / sizeof(*cmdMeths_);
+		    ++i) {
+			if (tokens[0] == cmdMeths_[i].first) {
+				m = cmdMeths_[i].second;
+				return (this->*m)(tokens);
 			}
 		}
-	} catch (const std::exception &e) {
+		log_->eUser(tokens[0] + ": unknow command\n");
+	}
+	return SHELL_CONTINUE;
+}
 
-		throw;
+int TaskMaster::execStatus(const std::vector<std::string> &tokens)
+{
+	if (tokens.size() > 1) {
+		log_->eUser("Too many arguments\n");
+		goto err;
 	}
 
+	std::cout << "exec status" << std::endl;
+	return SHELL_CONTINUE;
+
+err:
+	log_->iUser("Usage: status\n");
+	return SHELL_CONTINUE;
+}
+
+int TaskMaster::execStart(const std::vector<std::string> &tokens)
+{
+	if (tokens.size() == 1) {
+		log_->eUser("Missing program name\n");
+		goto err;
+	} else if (tokens.size() > 2) {
+		log_->eUser("Too many arguments\n");
+		goto err;
+	}
+
+	// if (!shellLine.find("start"))
+	// 	spawner_.startProgramBlock(*(pbList_.begin()));
+
+	std::cout << "exec start" << std::endl;
+	return SHELL_CONTINUE;
+
+err:
+	log_->iUser("Usage: start [program_name]\n");
+	return SHELL_CONTINUE;
+}
+
+int TaskMaster::execStop(const std::vector<std::string> &tokens)
+{
+	if (tokens.size() == 1) {
+		log_->eUser("Missing program name\n");
+		goto err;
+	} else if (tokens.size() > 2) {
+		log_->eUser("Too many arguments\n");
+		goto err;
+	}
+
+	std::cout << "exec stop" << std::endl;
+	return SHELL_CONTINUE;
+
+err:
+	log_->iUser("Usage: stop [program_name]\n");
+	return SHELL_CONTINUE;
+}
+
+int TaskMaster::execRestart(const std::vector<std::string> &tokens)
+{
+	if (tokens.size() == 1) {
+		log_->eUser("Missing program name\n");
+		goto err;
+	} else if (tokens.size() > 2) {
+		log_->eUser("Too many arguments\n");
+		goto err;
+	}
+
+	std::cout << "exec restart" << std::endl;
+	return SHELL_CONTINUE;
+
+err:
+	log_->iUser("Usage: restart [program_name]\n");
+	return SHELL_CONTINUE;
+
+}
+
+int TaskMaster::execReload(const std::vector<std::string> &tokens)
+{
+	if (tokens.size() > 1) {
+		log_->eUser("Too many arguments\n");
+		goto err;
+	}
+
+	std::cout << "exec reload" << std::endl;
+	return SHELL_CONTINUE;
+
+err:
+	log_->iUser("Usage: reload\n");
+	return SHELL_CONTINUE;
+}
+
+int TaskMaster::execExit(const std::vector<std::string> &tokens)
+{
+	if (tokens.size() > 1) {
+		log_->eUser("Too many arguments\n");
+		goto err;
+	}
+	return SHELL_EXIT;
+
+err:
+	log_->iUser("Usage: exit\n");
+	return SHELL_CONTINUE;
 }

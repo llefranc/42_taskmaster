@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 15:30:31 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/19 18:56:08 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/23 15:34:11 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,7 +77,7 @@ void Logger::init(const std::string &path)
 */
 void Logger::iUser(const std::string &str)
 {
-	std::cout << "[INFO ] " << str;
+	std::cout <<  str << std::flush;
 }
 
 /**
@@ -90,11 +90,11 @@ void Logger::iUser(const std::string &str)
 void Logger::iFile(const std::string &str)
 {
 	if (!logStream_.is_open())
-		throw std::runtime_error("[FATAL] Log file isn't open\n");
+		throw std::runtime_error("[ERROR] Log file isn't open\n");
 
 	logStream_ << "[INFO ] " << dateToStr() << str;
 	if (logStream_.fail()) {
-		throw std::runtime_error("[FATAL] Write to log file failed "
+		throw std::runtime_error("[ERROR] Write to log file failed "
 			"(path " + path_ + ")\n");
 	}
 }
@@ -117,24 +117,25 @@ void Logger::iAll(const std::string &str)
 */
 void Logger::eUser(const std::string &str)
 {
-	std::cerr << "[ERROR] " << str;
+	std::cerr << "Error: " << str << std::flush;
 }
 
 /**
  * eFile() - Output an ERROR log to logfile.
  * @str: The ERROR message to output.
  *
- * Output an ERROR log to logfile with a timestamp. Throw a std::runtime_error
- * exception if logfile isn't open or if an error occured during the write.
+ * Output immediately by flushing the buffer an ERROR log to logfile with a
+ * timestamp. Throw a std::runtime_error exception if logfile isn't open or if
+ * an error occured during the write.
 */
 void Logger::eFile(const std::string &str)
 {
 	if (!logStream_.is_open())
-		throw std::runtime_error("[FATAL] Log file isn't open\n");
+		throw std::runtime_error("[ERROR] Log file isn't open\n");
 
-	logStream_ << "[ERROR] " << dateToStr() << str;
+	logStream_ << "[ERROR] " << dateToStr() << str << std::flush;
 	if (logStream_.fail()) {
-		throw std::runtime_error("[FATAL] Write to log file failed "
+		throw std::runtime_error("[ERROR] Write to log file failed "
 			"(path " + path_ + ")\n");
 	}
 }

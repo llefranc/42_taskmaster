@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 15:44:22 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/23 12:16:49 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -118,12 +118,13 @@ class ConfigParser
 
 	private:
 
-		typedef void (ConfigParser::*methodPtr)(ProgramBlock *,
-				const std::string &, const std::string &);
-
 		std::string cfPath_;
 		std::vector<std::string> vecParentEnv_;
 		std::map<std::string, std::string> mapParentEnv_;
+
+		typedef void (ConfigParser::*methodPtr)(ProgramBlock *,
+				const std::string &, const std::string &);
+
 		const std::pair<std::string, methodPtr> tokMeths_[14] = {
 			std::make_pair<std::string, methodPtr>("cmd=",
 					&ConfigParser::parseCmd),
