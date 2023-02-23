@@ -6,51 +6,110 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:24:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/08 16:03:50 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 16:17:41 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <string.h>
-#include <vector>
+#include <signal.h>
 
-#include "ProgramBlock.hpp"
-#include "ProcInfo.hpp"
-#include "Spawner.hpp"
-#include "Logger.hpp"
 #include "TaskMaster.hpp"
 
-int nbProcessZombies = 0;
-int nbZombiesCleaned = 0;
+int g_nbProcessZombies = 0;
+int g_isSigHupReceived = 0;
 
-int main(int ac, char** av, char** env)
+void recvSigHup(int signal)
 {
-	(void)ac;
-	(void)av;
-	(void)env;
-	try 
-	{
-		
+	if (signal == SIGHUP)
+		g_isSigHupReceived = 1;
+}
 
-		// spawner.startProcess(pInfo, prgB);
-		TaskMaster tm;
-		tm.initLogger("./log.txt");
+void recvSigChld(int signal)
+{
+	if (signal == SIGCHLD)
+		++g_nbProcessZombies;
+}
 
-		tm.initConfigParser("");
-		tm.shellRoutine();
+int main(int ac, char **av, char **env)
+{
+	Logger log;
+	TaskMaster taskMaster(env);
 
+	if (ac != 3) {
+		std::cerr << "[ERROR] Wrong number of arguments\n";
+		std::cout << "Usage: taskmaster config-file log-file\n";
+		return 1;
 	}
-	catch (std::runtime_error & e)
-	{
-		std::cerr << e.what()  << " : "  << strerror(errno) << std::endl;
-	}
+	signal(SIGHUP, &recvSigHup);
+	signal(SIGCHLD, &recvSigChld);
 
+	try {
+		log.init(av[2]);
+	} catch (const std::runtime_error &e) {
+		std::cerr << e.what();
+		std::cout << "[INFO ] Taskmaster exited unexpectedly\n";
+		return 1;
+	}
+	log.iAll("Starting taskmaster\n");
+	log.iUser("Logger initialized (path: " + log.getPath() + ")\n");
+	taskMaster.setLogger(&log);
+
+	try {
+		taskMaster.initConfigParser(av[1]);
+		taskMaster.shellRoutine();
+	} catch (const std::runtime_error &e) {
+		log.eAll(e.what());
+		log.iAll("Taskmaster exited unexpectedly\n");
+		return 1;
+	}
 	return 0;
 }
 
+/**
+ * TESTS PROGRAM_BLOCK
+*/
+// #include "ProgramBlock.hpp"
+// #include "ProcInfo.hpp"
 
+// int main(int ac, char **av)
+// {
+// 	(void)ac;
+// 	(void)av;
+
+// 	std::vector<int> vec;
+// 	vec.push_back(2);
+// 	vec.push_back(4);
+// 	vec.push_back(0);
+// 	vec.push_back(100);
+
+// 	std::vector<std::string> vecstr;
+// 	vecstr.push_back("SALUT");
+// 	vecstr.push_back("YOOOOOO");
+// 	vecstr.push_back("HELLOOOOO");
+
+// 	// tester programblock
+// 	ProgramBlock a;
+
+// 	a.print();
+// 	ProcInfo pci("procinfo_name", 3, 22, 43);
+// 	ProcInfo pci2("procinfo_name 2", 3, 22, 43);
+// 	std::vector<ProcInfo> vecpci;
+// 	vecpci.push_back(pci);
+// 	vecpci.push_back(pci2);
+
+// 	a.setProcInfos(vecpci);
+// 	a.setExitCodes(vec);
+// 	a.setEnv(vecstr);
+// 	a.print();
+
+// 	ProgramBlock b(a);
+// 	ProgramBlock c;
+// 	c = a;
+
+// 	b.print();
+// 	c.print();
+// 	a.print();
+// 	a.clear();
+// 	a.print();
+// 	return 0;
+// }

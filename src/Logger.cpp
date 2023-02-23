@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 15:30:31 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/17 14:42:46 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/19 18:56:08 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,14 +59,14 @@ const std::string& Logger::getPath() const
 void Logger::init(const std::string &path)
 {
 	if (logStream_.is_open()) {
-		throw std::runtime_error("Logger is already associated to "
-				"another log file (path: " + path_ + ")\n");
+		throw std::runtime_error("[ERROR] Logger is already associated "
+				"to another log file (path: " + path_ + ")\n");
 	}
 
 	path_ = path;
 	logStream_.open(path, std::ofstream::out | std::ofstream::app);
 	if (!logStream_.is_open()) {
-		throw std::runtime_error("[FATAL] Failed to open log file "
+		throw std::runtime_error("[ERROR] Failed to open log file "
 				"(path: " + path + ")\n");
 	}
 }

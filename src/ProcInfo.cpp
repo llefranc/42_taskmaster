@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/17 17:05:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/17 18:39:05 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/22 11:47:56 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,14 +29,13 @@ ProcInfo::ProcInfo() :
 	endTime_(0)
 {}
 
-ProcInfo::ProcInfo(const std::string &name, int nbRestart, long startTime,
-		long endTime) :
+ProcInfo::ProcInfo(const std::string &name) :
 	state_(PC_STATE_STOP),
 	name_(name),
 	pid_(0),
-	nbRestart_(nbRestart),
-	startTime_(startTime),
-	endTime_(endTime)
+	nbRestart_(0),
+	startTime_(0),
+	endTime_(0)
 {
 	std::stringstream stream;
 	std::hash<std::string> hasher;

@@ -20,8 +20,7 @@ class ProcInfo
 		/* ---------------- COPLIEN FORM ----------------- */
 
 		ProcInfo();
-		ProcInfo(const std::string &name, int nbRestart, long startTime,
-				long endTime);
+		ProcInfo(const std::string &name);
 		~ProcInfo();
 		ProcInfo(const ProcInfo &c);
 		ProcInfo& operator=(ProcInfo a);
