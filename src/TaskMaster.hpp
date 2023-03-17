@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:22 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 15:47:54 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/23 15:38:52 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,12 @@ extern int g_isSigHupReceived;
 
 class TaskMaster
 {
+	private:
+		enum {
+			SHELL_CONTINUE,
+			SHELL_EXIT,
+		} E_shellStatus;
+
 		/* ----------------------------------------------- */
 		/* ---------------- COPLIEN FORM ----------------- */
 	public:
@@ -57,6 +63,17 @@ class TaskMaster
 		void initConfigParser(const std::string &cfPath);
 		void shellRoutine();
 
+	private:
+
+		std::vector<std::string> splitEntry(const std::string line);
+		int execCmd(const std::vector<std::string> &tokens);
+		int execStatus(const std::vector<std::string> &tokens);
+		int execStart(const std::vector<std::string> &tokens);
+		int execStop(const std::vector<std::string> &tokens);
+		int execRestart(const std::vector<std::string> &tokens);
+		int execReload(const std::vector<std::string> &tokens);
+		int execExit(const std::vector<std::string> &tokens);
+
 
 		/* ----------------------------------------------- */
 		/*------------------ ATTRIBUTES ------------------ */
@@ -67,6 +84,25 @@ class TaskMaster
 		ConfigParser configParser_;
 		Spawner spawner_;
 		std::list<ProgramBlock> pbList_;
+
+		typedef int (TaskMaster::*methodPtr)(
+				const std::vector<std::string> &);
+
+		const std::pair<std::string, methodPtr> cmdMeths_[6] = {
+			std::make_pair<std::string, methodPtr>("status",
+					&TaskMaster::execStatus),
+			std::make_pair<std::string, methodPtr>("start",
+					&TaskMaster::execStart),
+			std::make_pair<std::string, methodPtr>("stop",
+					&TaskMaster::execStop),
+			std::make_pair<std::string, methodPtr>("restart",
+					&TaskMaster::execRestart),
+			std::make_pair<std::string, methodPtr>("reload",
+					&TaskMaster::execReload),
+			std::make_pair<std::string, methodPtr>("exit",
+					&TaskMaster::execExit),
+		};
+
 };
 
 #endif // TASK_MASTER_HPP

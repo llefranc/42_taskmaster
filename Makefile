@@ -6,7 +6,7 @@
 #    By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/02/08 15:19:33 by llefranc          #+#    #+#              #
-#    Updated: 2023/02/22 15:40:45 by llefranc         ###   ########.fr        #
+#    Updated: 2023/02/23 14:28:02 by llefranc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -18,8 +18,6 @@ SRCS		=	main.cpp ConfigParser.cpp ProgramBlock.cpp ProcInfo.cpp \
 PATH_SRCS	=	src/
 
 OBJS		=	$(SRCS:.cpp=.o)
-
-HDRS		=	src/*.hpp
 
 CC		=	g++
 
@@ -43,6 +41,3 @@ re		:	fclean all
 
 %.o		:	%.cpp
 				@$(CC) $(FLAGS) -o $@ -c $<
-
-# To detect changes with header files, works with -MD flasgs for gcc
-#-include $(OBJS:.o=.d)
