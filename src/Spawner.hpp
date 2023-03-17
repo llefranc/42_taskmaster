@@ -22,6 +22,7 @@ class Spawner
 
         private:
                 char **setExecveEnv(const std::vector<std::string> &);
+                char **setExecveArg(std::string const &);
                 void freeExecveArg(char**, char**, size_t);
 
         private:

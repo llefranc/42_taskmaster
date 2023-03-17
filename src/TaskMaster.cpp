@@ -54,10 +54,10 @@ void TaskMaster::initConfigParser(const std::string &path)
 	pbList_ = configParser_.load(path);
 	log_->iAll("Configuration file successfully loaded\n");
 
-	for (std::list<ProgramBlock>::iterator it = pbList_.begin();
-	    it != pbList_.end(); ++it) {
-		it->print();
-	}
+	// for (std::list<ProgramBlock>::iterator it = pbList_.begin();
+	//     it != pbList_.end(); ++it) {
+	// 	it->print();
+	// }
 }
 
 void TaskMaster::shellRoutine()

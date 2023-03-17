@@ -23,7 +23,7 @@ HDRS		=	src/*.hpp
 
 CC		=	g++
 
-FLAGS		=	-MD -std=c++11 -g -fsanitize=address -Wall -Werror -Wextra
+FLAGS		=	-std=c++11 -g -fsanitize=address -Wall -Werror -Wextra
 
 all		:	$(NAME)
 
@@ -45,4 +45,4 @@ re		:	fclean all
 				@$(CC) $(FLAGS) -o $@ -c $<
 
 # To detect changes with header files, works with -MD flasgs for gcc
--include $(OBJS:.o=.d)
+#-include $(OBJS:.o=.d)

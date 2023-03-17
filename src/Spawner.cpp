@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include "time.h"
-
+#include <ctype.h>
 #include <iostream>
 
 
@@ -134,6 +134,26 @@ char** Spawner::setExecveEnv(const std::vector<std::string> &vecEnv)
 	}
 
 	return env;
+}
+
+char** Spawner::setExecveArg(std::string const &cmd)
+{
+	int word = 0;
+	bool lastIsSpace=false;
+	if (isspace(cmd[0]))
+		lastIsSpace=true;
+	else
+		word++;
+	for (int i=1; i < cmd.size(); i++)
+	{
+		if (isspace(cmd[i]))
+			lastIsSpace=true;
+		else if (lastIsSpace && !isspace(cmd[i]))
+		{
+			word++;
+			lastIsSpace=false;
+		}
+	}
 }
 
 void Spawner::freeExecveArg(char** arg, char** env, size_t size)
