@@ -55,10 +55,10 @@ void TaskMaster::initConfigParser(const std::string &path)
 	pbList_ = configParser_.load(path);
 	log_->iAll("Configuration file successfully loaded\n");
 
-	// for (std::list<ProgramBlock>::iterator it = pbList_.begin();
-	//     it != pbList_.end(); ++it) {
-	// 	it->print();
-	// }
+	for (std::list<ProgramBlock>::iterator it = pbList_.begin();
+	    it != pbList_.end(); ++it) {
+		it->print();
+	}
 }
 
 void TaskMaster::shellRoutine()
@@ -153,8 +153,11 @@ err:
 	return SHELL_CONTINUE;
 }
 
+
 int TaskMaster::execStart(const std::vector<std::string> &tokens)
 {
+	std::string pblockCopyName = tokens[1].substr(0, tokens[1].find("_"));
+	
 	if (tokens.size() == 1) {
 		log_->eUser("Missing program name\n");
 		goto err;
@@ -163,11 +166,22 @@ int TaskMaster::execStart(const std::vector<std::string> &tokens)
 		goto err;
 	}
 
-	// if (!shellLine.find("start"))
-	// 	spawner_.startProgramBlock(*(pbList_.begin()));
+	for (std::list<ProgramBlock>::iterator itList = pbList_.begin();
+	     itList != pbList_.end(); itList++) {
 
-	std::cout << "exec start" << std::endl;
-	return SHELL_CONTINUE;
+		if (itList->getName() == pblockCopyName) {
+			std::vector<ProcInfo> proc = itList->getProcInfos();
+			for (size_t i =0; i < proc.size(); i++) {
+
+				if (proc[i].getName() == tokens[1]) {
+					spawner_.startProcess(proc[i], *itList);
+				}
+				else if (i == proc.size() - 1)
+					log_->eAll("Process name not found\n");
+			}
+			return SHELL_CONTINUE;
+		}
+	}
 
 err:
 	log_->iUser("Usage: start [program_name]\n");
@@ -176,12 +190,32 @@ err:
 
 int TaskMaster::execStop(const std::vector<std::string> &tokens)
 {
+	std::string pblockCopyName = tokens[1].substr(0, tokens[1].find("_"));
+
 	if (tokens.size() == 1) {
 		log_->eUser("Missing program name\n");
 		goto err;
 	} else if (tokens.size() > 2) {
 		log_->eUser("Too many arguments\n");
 		goto err;
+	}
+	std::
+	for (std::list<ProgramBlock>::iterator itList = pbList_.begin();
+	     itList != pbList_.end(); itList++) {
+
+		if (itList->getName() == pblockCopyName) {
+			std::vector<ProcInfo> proc = itList->getProcInfos();
+			for (size_t i =0; i < proc.size(); i++) {
+
+				if (proc[i].getName() == tokens[1]) {
+					std::cout << "stopping process\n";
+					spawner_.unSpawnProcess(proc[i], *itList);
+				}
+				else if (i == proc.size() - 1)
+					log_->eAll("Process name not found\n");
+			}
+			return SHELL_CONTINUE;
+		}
 	}
 
 	std::cout << "exec stop" << std::endl;
@@ -238,3 +272,4 @@ err:
 	log_->iUser("Usage: exit\n");
 	return SHELL_CONTINUE;
 }
+

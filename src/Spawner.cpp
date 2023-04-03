@@ -3,10 +3,11 @@
 #include <stdexcept>
 #include <fcntl.h>
 #include <string.h>
-#include "time.h"
+#include <time.h>
 #include <ctype.h>
 #include <iostream>
-
+#include <sys/stat.h>
+#include <signal.h>
 
 
 Spawner::Spawner()
@@ -48,6 +49,11 @@ void Spawner::startProgramBlock(ProgramBlock& prg)
 
 }
 
+void Spawner::unSpawnProcess(ProcInfo& pInfo, const ProgramBlock& prg)
+{
+	kill(pInfo.getPid(), prg.getStopSignal());
+}
+
 void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 {
 	try
@@ -55,27 +61,13 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 		pid_t pid;
 
 		pid = fork();
-		int oldOut = dup(STDOUT_FILENO);
-		int oldErr = dup(STDERR_FILENO);
 		if (pid == 0)
 		{
-			// open log files for stdout and stderr
+			int oldOut = dup(STDOUT_FILENO);
+			int oldErr = dup(STDERR_FILENO);
 			int fd, fderr;
-			std::string outFile = pInfo.getName() + "_" + pInfo.getHash() + "_stdout.txt";
-			std::string errFile = pInfo.getName() + "_" + pInfo.getHash() + "_stderr.txt";
-			std::string outPath(prg.getLogOut() + "/" + outFile);
-			std::string errPath(prg.getLogErr() + "/" + errFile);
-
-			if ((fd = open(outPath.c_str(), O_CREAT | O_APPEND | O_WRONLY)) < 0)
-				throw std::runtime_error("error open " + outPath + "\n");
-			if ((fderr = open(errPath.c_str(), O_CREAT | O_APPEND | O_WRONLY)) < 0)
-				throw std::runtime_error("error open " + errPath + "\n");
-
-			// redirection out and err into log files
-			if (dup2(fd, STDOUT_FILENO) < 0)
-				throw std::runtime_error("premier dup\n");
-			if (dup2(fderr, STDERR_FILENO) < 0)
-				throw std::runtime_error("deuxieme dup\n");
+			// open process log files for stdout and stderr
+			fileProcHandler(pInfo, fd, fderr, prg);
 
 			// change working directory if specified
 			if (prg.getWorkDir().empty() == false)
@@ -83,8 +75,10 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 
 			// set up for execve - argument and environment variables
 			char **env = setExecveEnv(prg.getEnv());
-			char **arg = (char**)malloc(sizeof(char*));
-			bzero(arg, sizeof(char*));
+			char **arg = (char**)malloc(sizeof(char*) * 2);
+			arg[0] = (char*)(prg.getCmd().c_str());
+			arg[1] = 0;
+
 			if (execve(prg.getCmd().c_str(), arg, env) < 0)
 			{
 				// free arg and env + redirect stdout and stderr back
@@ -118,9 +112,31 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 	}
 }
 
+void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr, const ProgramBlock& prg)
+{
+	mode_t mode = umask(prg.getUmask());   // sauvegarder l'ancienne valeur mode_t
+	std::string outFile = pInfo.getName() + "_" + pInfo.getHash() + "_stdout.txt";
+	std::string errFile = pInfo.getName() + "_" + pInfo.getHash() + "_stderr.txt";
+	std::string outPath(prg.getLogOut() + "/" + outFile);
+	std::string errPath(prg.getLogErr() + "/" + errFile);
+
+	if ((fd = open(outPath.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0)
+		throw std::runtime_error("Open " + outPath + " : " +  strerror(errno) + "\n");
+	if ((fderr = open(errPath.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0)
+		throw std::runtime_error("error open " + errPath + "\n");
+
+	// redirection out and err into log files
+	if (dup2(fd, STDOUT_FILENO) < 0)
+		throw std::runtime_error("premier dup\n");
+	if (dup2(fderr, STDERR_FILENO) < 0)
+		throw std::runtime_error("deuxieme dup\n");
+	
+	umask(mode);	// umask at its initial state
+}
+
 char** Spawner::setExecveEnv(const std::vector<std::string> &vecEnv)
 {
-	char **env;
+	static char **env;
 	int nbEnv = vecEnv.size();
 	env = (char**)malloc(sizeof(char*) * (nbEnv + 1));
 	if (env == NULL)
@@ -129,32 +145,31 @@ char** Spawner::setExecveEnv(const std::vector<std::string> &vecEnv)
 	bzero(env, sizeof(*env));
 	for (int i = 0; i < nbEnv; i++)
 	{
-		// env[1] ????? env[i] plutot non ?
-		env[1] = strdup(vecEnv[i].c_str());
+		env[i] = strdup(vecEnv[i].c_str());
 	}
-
+	env[nbEnv] = 0;
 	return env;
 }
 
-char** Spawner::setExecveArg(std::string const &cmd)
-{
-	int word = 0;
-	bool lastIsSpace=false;
-	if (isspace(cmd[0]))
-		lastIsSpace=true;
-	else
-		word++;
-	for (int i=1; i < cmd.size(); i++)
-	{
-		if (isspace(cmd[i]))
-			lastIsSpace=true;
-		else if (lastIsSpace && !isspace(cmd[i]))
-		{
-			word++;
-			lastIsSpace=false;
-		}
-	}
-}
+// char** Spawner::setExecveArg(std::string const &cmd)
+// {
+// 	int word = 0;
+// 	bool lastIsSpace=false;
+// 	if (isspace(cmd[0]))
+// 		lastIsSpace=true;
+// 	else
+// 		word++;
+// 	for (size_t i=1; i < cmd.size(); i++)
+// 	{
+// 		if (isspace(cmd[i]))
+// 			lastIsSpace=true;
+// 		else if (lastIsSpace && !isspace(cmd[i]))
+// 		{
+// 			word++;
+// 			lastIsSpace=false;
+// 		}
+// 	}
+// }
 
 void Spawner::freeExecveArg(char** arg, char** env, size_t size)
 {
