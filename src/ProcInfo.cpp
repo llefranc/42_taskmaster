@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/17 17:05:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 11:47:56 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/03 16:26:33 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,9 @@ ProcInfo::ProcInfo() :
 	endTime_(0)
 {}
 
+/**
+ * Create a ProcInfo with a name and generate its hash based on its name.
+*/
 ProcInfo::ProcInfo(const std::string &name) :
 	state_(PC_STATE_STOP),
 	name_(name),

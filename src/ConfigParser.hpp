@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 15:44:22 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/03 15:43:59 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -121,9 +121,17 @@ class ConfigParser
 		typedef void (ConfigParser::*methodPtr)(ProgramBlock *,
 				const std::string &, const std::string &);
 
+		/* Configuration file path. */
 		std::string cfPath_;
+
+		/*
+		 * vecParentEnv_ and mapParentEnv_ are used to populate the
+		 * ProgramBlocks environment with parent environment.
+		 */
 		std::vector<std::string> vecParentEnv_;
 		std::map<std::string, std::string> mapParentEnv_;
+
+		/* Parse methods associated to config file tokens. */
 		const std::pair<std::string, methodPtr> tokMeths_[14] = {
 			std::make_pair<std::string, methodPtr>("cmd=",
 					&ConfigParser::parseCmd),

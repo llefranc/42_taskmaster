@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:17:16 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 12:03:24 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/03 16:07:15 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,13 +17,17 @@
 #include <signal.h>
 
 
+/**
+ * Create a new ProgramBlock with default values for each field. See attributes
+ * in ProgramBlock.hpp for more info.
+*/
 ProgramBlock::ProgramBlock() :
-	state_(PB_STATE_NEW),
+	state_(E_PB_STATE_NEW),
 	procInfos_(),
 	name_(),
 	cmd_(),
 	numProcs_(1),
-	umask_(0022),
+	umask_(0022), /* Octal value */
 	workDir_(),
 	autoStart_(false),
 	autoRestart_(false),
@@ -290,19 +294,26 @@ void ProgramBlock::setEnv(const std::vector<std::string>& env)
 /* ----------------------------------------------- */
 /* ------------------- METHODS ------------------- */
 
+/**
+ * Return true if the ProgramBlock was corretly filled during config file
+ * parsing, i.e. name and command where specified.
+*/
 bool ProgramBlock::isCorrect() const
 {
 	return name_.length() && cmd_.length();
 }
 
+/**
+ * Reset the ProgramBlock to its default value.
+*/
 void ProgramBlock::clear()
 {
-	state_ = PB_STATE_NEW;
+	state_ = E_PB_STATE_NEW;
 	procInfos_.clear();
 	name_ = "";
 	cmd_ = "";
 	numProcs_ = 1;
-	umask_ = 0022;
+	umask_ = 0022; /* Octal value */
 	workDir_ = "";
 	autoStart_ = false;
 	autoRestart_ = false;
@@ -316,6 +327,9 @@ void ProgramBlock::clear()
 	env_.clear();
 }
 
+/**
+ * Print ProgramBlock content on stdout (usefull for debug).
+*/
 void ProgramBlock::print() const
 {
 	std::cout << "state_=" << state_ << std::endl;
