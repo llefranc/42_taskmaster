@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/23 15:24:59 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/03 17:09:45 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,9 @@ void TaskMaster::setLogger(Logger* log)
 /* ----------------------------------------------- */
 /* ------------------- METHODS ------------------- */
 
+/**
+ * Parse the configuration file for the first time.
+*/
 void TaskMaster::initConfigParser(const std::string &path)
 {
 	log_->iAll("Parsing configuration file (path: " + path + ")\n");
@@ -61,6 +64,10 @@ void TaskMaster::initConfigParser(const std::string &path)
 	// }
 }
 
+/**
+ * - Wait for a command from user and execute it.
+ * - Execute the appropriate action when a child process dies.
+*/
 void TaskMaster::shellRoutine()
 {
 	int pollRet;

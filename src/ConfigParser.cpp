@@ -6,11 +6,13 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 15:21:46 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/03 17:05:52 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ConfigParser.hpp"
+
+#include "ProgramBlock.hpp"
 
 #include <list>
 #include <set>
@@ -18,8 +20,6 @@
 #include <algorithm>
 #include <ctype.h>
 #include <iostream>
-
-#include "ProgramBlock.hpp"
 
 #define MAX_LINE_LEN 1024
 #define MAX_NAME_LEN 20
@@ -39,6 +39,10 @@ static int lineNb = 0;
 /* ----------------------------------------------- */
 /* ---------------- COPLIEN FORM ----------------- */
 
+/**
+ * Create a ConfigParser object. Copy the environment of the parent process that
+ * launched taskmaster in order to populate the environment of ProgramBlocks.
+*/
 ConfigParser::ConfigParser(char **env) :
 	cfPath_(), vecParentEnv_(), mapParentEnv_()
 {
@@ -99,11 +103,17 @@ void swap(ConfigParser &a, ConfigParser &b)
 	std::swap(a.cfPath_, b.cfPath_);
 }
 
+/**
+ * Print line number when a parsing error occurs.
+*/
 static inline std::string lNbStr()
 {
 	return "(line "	+ std::to_string(lineNb) + ")\n";
 }
 
+/**
+ * Remove whitespaces at the end of a string.
+*/
 static inline std::string &revWsTrim(std::string &s) {
 	s.erase(std::find_if(s.rbegin(),
 	    s.rend(),
@@ -112,6 +122,10 @@ static inline std::string &revWsTrim(std::string &s) {
 	return s;
 }
 
+/**
+ * Remove the two quotes that surround an environment variable from argument of
+ * token "env" in config file.
+*/
 static inline std::string quotesTrim(const std::string &str)
 {
 	return str.substr(1, str.size() - 2);
@@ -121,6 +135,10 @@ static inline std::string quotesTrim(const std::string &str)
 /* ----------------------------------------------- */
 /* ------------------- METHODS ------------------- */
 
+/**
+ * Parse the configuration file and generate the list of ProgramBlocks. If an
+ * error occurs, abort the parsing and throw a std::runtime_error exception.
+*/
 std::list<ProgramBlock> ConfigParser::load(const std::string &cfPath)
 {
 	ProgramBlock pb;
@@ -164,6 +182,9 @@ std::list<ProgramBlock> ConfigParser::load(const std::string &cfPath)
 /* ----------------------------------------------- */
 /* --------------- PRIVATE METHODS --------------- */
 
+/**
+ * Check if the path to configuration file is correct.
+*/
 void ConfigParser::checkFileOpening(std::ifstream *ifs, const std::string& path)
 {
 	ifs->seekg(0, std::ios::end);
@@ -175,6 +196,13 @@ void ConfigParser::checkFileOpening(std::ifstream *ifs, const std::string& path)
 	ifs->seekg(0);
 }
 
+/**
+ * Parse the program name which must be:
+ * - First line of a program block.
+ * - Surrounded by brackets ([programname]).
+ * - Long of 1 to 20 alphanumeric characters inside brackets.
+ * - Unique in the configuration file.
+*/
 void ConfigParser::parseProgramName(const std::list<ProgramBlock> &pbList,
 		ProgramBlock *pb, const std::string &line)
 {
@@ -213,6 +241,11 @@ void ConfigParser::parseProgramName(const std::list<ProgramBlock> &pbList,
 	pb->setName(name);
 }
 
+/**
+ * Parse a line looking for a token at the beginning of the line, and if a
+ * correct token exist call the parsing method associated to it. Line can't be
+ * empty and token's format must be "token=xxx" with no spaces around the '='.
+*/
 void ConfigParser::parseToken(ProgramBlock *pb, const std::string &line)
 {
 	methodPtr m;
@@ -243,6 +276,10 @@ void ConfigParser::parseToken(ProgramBlock *pb, const std::string &line)
 	throw std::runtime_error("Error while parsing key " + lNbStr());
 }
 
+/**
+ * Parse argument of token "cmd" which must be:
+ * - Less than MAX_LINE_LEN characters.
+*/
 void ConfigParser::parseCmd(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -255,6 +292,11 @@ void ConfigParser::parseCmd(ProgramBlock *pb, const std::string &token,
 	pb->setCmd(param);
 }
 
+/**
+ * Parse argument of token "numprocs" which must be:
+ * - Only digit characters.
+ * - With a value between 1 and MAX_NUMPROCS.
+*/
 void ConfigParser::parseNumProcs(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -279,6 +321,10 @@ void ConfigParser::parseNumProcs(ProgramBlock *pb, const std::string &token,
 	pb->setNumProcs(val);
 }
 
+/**
+ * Parse argument of token "umask" which must be:
+ * - 3 octals digit characters.
+*/
 void ConfigParser::parseUmask(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -294,6 +340,10 @@ void ConfigParser::parseUmask(ProgramBlock *pb, const std::string &token,
 	}
 }
 
+/**
+ * Parse argument of token "workingdir" which must be:
+ * - Less than MAX_LINE_LEN characters.
+*/
 void ConfigParser::parseWorkingDir(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -307,6 +357,10 @@ void ConfigParser::parseWorkingDir(ProgramBlock *pb, const std::string &token,
 	pb->setWorkDir(param);
 }
 
+/**
+ * Parse argument of token "autostart" which must be:
+ * - false|true.
+*/
 void ConfigParser::parseAutoStart(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -322,23 +376,32 @@ void ConfigParser::parseAutoStart(ProgramBlock *pb, const std::string &token,
 	}
 }
 
+/**
+ * Parse argument of token "autorestart" which must be:
+ * - false|true|unexpected.
+*/
 void ConfigParser::parseAutoRestart(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
 	// std::cout << "Parsing " << token << "\n";
 
 	if (param == "false") {
-		pb->setAutoRestart(ProgramBlock::AUTO_FALSE);
+		pb->setAutoRestart(ProgramBlock::E_AUTO_FALSE);
 	} else if (param == "true") {
-		pb->setAutoRestart(ProgramBlock::AUTO_TRUE);
+		pb->setAutoRestart(ProgramBlock::E_AUTO_TRUE);
 	} else if (param == "unexpected") {
-		pb->setAutoRestart(ProgramBlock::AUTO_UNEXP);
+		pb->setAutoRestart(ProgramBlock::E_AUTO_UNEXP);
 	} else {
 		throw std::runtime_error(token + ": must be "
 				"false|true|unexpected " + lNbStr());
 	}
 }
 
+/**
+ * Parse argument of token "startretries" which must be:
+ * - Only digit characters.
+ * - With a value between 0 and MAX_STARTRETRIES.
+*/
 void ConfigParser::parseStartRetries(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -363,6 +426,11 @@ void ConfigParser::parseStartRetries(ProgramBlock *pb, const std::string &token,
 	pb->setStartRetries(val);
 }
 
+/**
+ * Parse argument of token "starttime" which must be:
+ * - Only digit characters.
+ * - With a value between 0 and MAX_STARTTIME.
+*/
 void ConfigParser::parseStartTime(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -387,6 +455,12 @@ void ConfigParser::parseStartTime(ProgramBlock *pb, const std::string &token,
 	pb->setStartTime(val);
 }
 
+/**
+ * Parse argument of token "exitcodes" which must be:
+ * - One or many exit codes, which are numbers between 0 and 255.
+ * - Exit codes must be separated by ',' character.
+ * - No spaces around ',' separator character.
+*/
 void ConfigParser::parseExitCodes(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -418,6 +492,10 @@ void ConfigParser::parseExitCodes(ProgramBlock *pb, const std::string &token,
 	pb->setExitCodes(s);
 }
 
+/**
+ * Parse argument of token "starttime" which must be:
+ * - HUP|INT|QUIT|TERM|KILL|USR1|USR2.
+*/
 void ConfigParser::parseStopSignal(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -442,6 +520,11 @@ void ConfigParser::parseStopSignal(ProgramBlock *pb, const std::string &token,
 			"KILL|USR1|USR2 " + lNbStr());
 }
 
+/**
+ * Parse argument of token "stoptime" which must be:
+ * - Only digit characters.
+ * - With a value between 0 and MAX_STOPTIME.
+*/
 void ConfigParser::parseStopTime(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -466,6 +549,10 @@ void ConfigParser::parseStopTime(ProgramBlock *pb, const std::string &token,
 	pb->setStopTime(val);
 }
 
+/**
+ * Parse argument of token "stdout" which must be:
+ * - Less than MAX_LINE_LEN characters.
+*/
 void ConfigParser::parseStdout(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -478,6 +565,10 @@ void ConfigParser::parseStdout(ProgramBlock *pb, const std::string &token,
 	pb->setLogOut(param);
 }
 
+/**
+ * Parse argument of token "stderr" which must be:
+ * - Less than MAX_LINE_LEN characters.
+*/
 void ConfigParser::parseStderr(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -490,6 +581,12 @@ void ConfigParser::parseStderr(ProgramBlock *pb, const std::string &token,
 	pb->setLogErr(param);
 }
 
+/**
+ * Parse argument of token "env" which must be:
+ * - One or many environment variables with the format KEY="value".
+ * - Environment variables must be separated by ',' character.
+ * - No spaces around ',' separator character.
+*/
 void ConfigParser::parseEnv(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
@@ -530,6 +627,10 @@ err_parsing:
 			"KEY1=\"value1\",KEY2=\"value2\" " + lNbStr());
 }
 
+/**
+ * If the newly parsed ProgramBlock is correct, add it to the list of saved
+ * ProgramBlocks.
+*/
 void ConfigParser::savePb(std::list<ProgramBlock> *pbList, ProgramBlock *pb,
 		bool *inProgramBlock)
 {
@@ -545,6 +646,10 @@ void ConfigParser::savePb(std::list<ProgramBlock> *pbList, ProgramBlock *pb,
 	}
 }
 
+/**
+ * Generate x empty ProcInfos for a ProgramBlock based on its numprocs
+ * attribute. Each ProcInfo will be name "ProgramBlock::name_x".
+*/
 void ConfigParser::generateProcInfos(std::list<ProgramBlock> *pbList)
 {
 	std::vector<ProcInfo> vPis;
@@ -553,7 +658,7 @@ void ConfigParser::generateProcInfos(std::list<ProgramBlock> *pbList)
 	    it != pbList->end(); ++it) {
 		vPis.clear();
 		for (int i = 0; i < it->getNumprocs(); ++i) {
-			ProcInfo pi(it->getName() + + "_" +std::to_string(i));
+			ProcInfo pi(it->getName() + + "_" + std::to_string(i));
 			vPis.push_back(pi);
 		}
 		it->setProcInfos(vPis);
@@ -603,6 +708,9 @@ std::vector<std::string> ConfigParser::splitStr(const std::string &param,
 	return v;
 }
 
+/**
+ * Parse key of an environment variable from argument of token "env".
+*/
 int ConfigParser::checkEnvKey(const std::string &varKey)
 {
 	int i = 0;
@@ -618,6 +726,9 @@ int ConfigParser::checkEnvKey(const std::string &varKey)
 	return 0;
 }
 
+/**
+ * Parse value of an environment variable from argument of token "env".
+*/
 int ConfigParser::checkEnvVal(const std::string &varVal)
 {
 	int i = -1;
@@ -644,7 +755,10 @@ int ConfigParser::checkEnvVal(const std::string &varVal)
 	return 0;
 }
 
-// If nothing to split return empty pair
+/**
+ * Split an environment variable from argument of token "env" based on '='
+ * character. Return an empty pair if no '=' character.
+*/
 std::pair<std::string, std::string> ConfigParser::splitEnvVar(
 		const std::string &var)
 {
@@ -660,6 +774,10 @@ std::pair<std::string, std::string> ConfigParser::splitEnvVar(
 	return p;
 }
 
+/**
+ * Split the argument of token "env" in several environment variables based on
+ * ',' separator.
+*/
 std::vector<std::string> ConfigParser::splitEnv(const std::string &param)
 {
 	bool inQuotes = false;
