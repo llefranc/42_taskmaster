@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/03 17:05:52 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/04 11:10:43 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -218,7 +218,8 @@ void ConfigParser::parseProgramName(const std::list<ProgramBlock> &pbList,
 	/* -2 for '[' and ']' characs */
 	name = line.substr(1, line.size() - 2);
 
-	if (name.empty() || name.size() > MAX_NAME_LEN) {
+	/* +1 for '\0' charac */
+	if (name.empty() || name.size() > MAX_NAME_LEN + 1) {
 		throw std::runtime_error("Program name: between 1 and "
 				+ std::to_string(MAX_NAME_LEN) + " characters "
 				"- e.g. [1-20 characs] " + lNbStr());

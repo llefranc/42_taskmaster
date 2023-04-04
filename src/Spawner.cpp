@@ -36,7 +36,7 @@ void Spawner::startProgramBlock(ProgramBlock& prg)
 		for (it = pInfo.begin(); it != pInfo.end(); it++)
 		{
 			int pState = it->getState();
-			if (pState != ProcInfo::PC_STATE_STARTING || pState != ProcInfo::PC_STATE_RUNNING)
+			if (pState != ProcInfo::E_STATE_STARTING || pState != ProcInfo::E_STATE_RUNNING)
 				startProcess(*it, prg);
 		}
 
@@ -101,7 +101,7 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 		else if (pid > 0)
 		{
 			pInfo.setStartTime(time(NULL));
-			pInfo.setState(ProcInfo::PC_STATE_STARTING);
+			pInfo.setState(ProcInfo::E_STATE_STARTING);
 			pInfo.setPid(pid);
 			int nbRes = pInfo.getNbRestart();
 			pInfo.setNbRestart(nbRes++);

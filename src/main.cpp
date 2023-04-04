@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:24:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/22 16:17:41 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/02/23 16:30:15 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,6 +62,7 @@ int main(int ac, char **av, char **env)
 		log.iAll("Taskmaster exited unexpectedly\n");
 		return 1;
 	}
+	log.iAll("Quitting taskmaster\n");
 	return 0;
 }
 
