@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:22 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/05 10:47:58 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/05 11:01:23 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,9 +19,6 @@
 #include "ConfigParser.hpp"
 #include "Spawner.hpp"
 #include "ProgramBlock.hpp"
-
-extern int g_nbProcessZombies;
-extern int g_isSigHupReceived;
 
 class TaskMaster
 {
@@ -74,6 +71,9 @@ class TaskMaster
 		int execRestart(const std::vector<std::string> &tokens);
 		int execReload(const std::vector<std::string> &tokens);
 		int execExit(const std::vector<std::string> &tokens);
+		void getProgExecutionInfoByName(const std::string& name,
+				std::pair<ProgramBlock*, ProcInfo*> &info,
+				bool bprocInfo=true);
 
 		/* ----------------------------------------------- */
 		/*------------------ ATTRIBUTES ------------------ */

@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/05 10:58:55 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/05 11:04:20 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,8 @@
 #include <string.h>
 #include <ctime>
 
+extern int g_nbZombiesCleaned;
+extern volatile int g_nbProcessZombies;
 
 /* ----------------------------------------------- */
 /* ---------------- COPLIEN FORM ----------------- */
@@ -59,10 +61,10 @@ void TaskMaster::initConfigParser(const std::string &path)
 	pbList_ = configParser_.load(path);
 	log_->iAll("Configuration file successfully loaded\n");
 
-	// for (std::list<ProgramBlock>::iterator it = pbList_.begin();
-	//     it != pbList_.end(); ++it) {
-	// 	it->print();
-	// }
+	for (std::list<ProgramBlock>::iterator it = pbList_.begin();
+	    it != pbList_.end(); ++it) {
+		it->print();
+	}
 }
 
 /**
@@ -83,8 +85,11 @@ void TaskMaster::shellRoutine()
 	while (true)
 	{
 		pollRet = poll(&pfd, 1, 0);
-		if (pollRet & POLLIN)
-		{
+		if (g_nbProcessZombies > g_nbZombiesCleaned){
+			spawner_.unSpawnProcess(pbList_);
+			g_nbZombiesCleaned++;
+		}
+		else if (pollRet & POLLIN) {
 			if (read(0, buf, sizeof(buf)) == -1) {
 				throw std::runtime_error("Read failed: "
 						+ std::string(strerror(errno))
@@ -167,6 +172,8 @@ err:
 
 int TaskMaster::execStart(const std::vector<std::string> &tokens)
 {
+	std::pair<ProgramBlock*, ProcInfo*> infoExec;
+
 	if (tokens.size() == 1) {
 		log_->eUser("Missing program name\n");
 		goto err;
@@ -175,10 +182,14 @@ int TaskMaster::execStart(const std::vector<std::string> &tokens)
 		goto err;
 	}
 
-	// if (!shellLine.find("start"))
-	// 	spawner_.startProgramBlock(*(pbList_.begin()));
+	getProgExecutionInfoByName(tokens[1], infoExec);
 
-	std::cout << "exec start" << std::endl;
+	if (infoExec.second == NULL){
+		log_->eAll("Process name not found\n");
+		return SHELL_CONTINUE;
+	}
+
+	spawner_.startProcess(*infoExec.second, *infoExec.first);
 	return SHELL_CONTINUE;
 
 err:
@@ -188,12 +199,30 @@ err:
 
 int TaskMaster::execStop(const std::vector<std::string> &tokens)
 {
+	std::string pblockCopyName = tokens[1].substr(0, tokens[1].find("_"));
+
 	if (tokens.size() == 1) {
 		log_->eUser("Missing program name\n");
 		goto err;
 	} else if (tokens.size() > 2) {
 		log_->eUser("Too many arguments\n");
 		goto err;
+	}
+	for (std::list<ProgramBlock>::iterator itList = pbList_.begin();
+	     itList != pbList_.end(); itList++) {
+
+		if (itList->getName() == pblockCopyName) {
+			std::vector<ProcInfo> proc = itList->getProcInfos();
+			for (size_t i =0; i < proc.size(); i++) {
+
+				if (proc[i].getName() == tokens[1]) {
+					std::cout << "stopping process\n";
+				}
+				else if (i == proc.size() - 1)
+					log_->eAll("Process name not found\n");
+			}
+			return SHELL_CONTINUE;
+		}
 	}
 
 	std::cout << "exec stop" << std::endl;
@@ -233,6 +262,8 @@ void printPbList(const std::list<ProgramBlock> &pbList)
 
 void TaskMaster::updatePbList(std::list<ProgramBlock> *newPbList)
 {
+	std::pair<ProgramBlock*, ProcInfo*> infoExec;
+	(void)newPbList;
 	// parcourir toute la liste de l'ancien et checker si present dans la
 	// new.
 	// SI PAS PRESENT : state a remove et on l'insere au debut de la new
@@ -281,4 +312,28 @@ int TaskMaster::execExit(const std::vector<std::string> &tokens)
 err:
 	log_->iUser("Usage: exit\n");
 	return SHELL_CONTINUE;
+}
+
+void TaskMaster::getProgExecutionInfoByName(const std::string& name,
+		std::pair<ProgramBlock*, ProcInfo*>& info, bool bProcInfo)
+{
+	std::string pblockCopyName = name.substr(0, name.find("_"));
+
+	info.first = NULL;
+	info.second = NULL;
+
+	for (std::list<ProgramBlock>::iterator itList = pbList_.begin();
+	     itList != pbList_.end(); itList++) {
+
+		if (itList->getName() == pblockCopyName) {
+			if (!bProcInfo)
+				return;
+			ProcInfo *proc = itList->getProcInfoByName(name);
+			if (proc != NULL){
+				info.first = &(*itList);
+				info.second = proc;
+				return;
+			}
+		}
+	}
 }

@@ -3,11 +3,15 @@
 #include <stdexcept>
 #include <fcntl.h>
 #include <string.h>
-#include "time.h"
-
+#include <time.h>
+#include <ctype.h>
 #include <iostream>
+#include <sys/stat.h>
+#include <signal.h>
+#include <sys/wait.h>
 
-
+extern int g_nbZombiesCleaned;
+extern volatile int g_nbProcessZombies;  // TODO inutile a supprimer
 
 Spawner::Spawner()
 	: logger_(NULL)
@@ -32,7 +36,7 @@ void Spawner::startProgramBlock(ProgramBlock& prg)
 	try
 	{
 		std::vector<ProcInfo>::iterator it;
-		std::vector<ProcInfo> pInfo = prg.getProcInfos();
+		std::vector<ProcInfo> &pInfo = prg.getProcInfos();
 		for (it = pInfo.begin(); it != pInfo.end(); it++)
 		{
 			int pState = it->getState();
@@ -48,6 +52,51 @@ void Spawner::startProgramBlock(ProgramBlock& prg)
 
 }
 
+void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
+{
+	int status= -1;
+	int pidChild = wait(&status);
+
+	ProcInfo *proc = NULL;
+	ProgramBlock *pb = NULL;
+	for (std::list<ProgramBlock>::iterator it = pbList.begin();
+	      it != pbList.end(); it++) {
+		proc = it->getProcInfoByPid(pidChild);
+		if (proc){
+			pb = &(*it);
+			break;
+		}
+	}
+
+	if (proc == NULL || pb == NULL) {
+		logger_->eAll("Process PID not found\n");
+		return ;
+	}
+
+	if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
+
+		if (pb->getAutoRestart() == ProgramBlock::E_AUTO_FALSE || 
+		       (pb->getAutoRestart() == ProgramBlock::E_AUTO_UNEXP &&
+		       pb->getExitCodes().find(status) != pb->getExitCodes().end())) { 
+			proc->setState(ProcInfo::E_STATE_EXITED);
+		}
+		else {
+
+			if (proc->getNbRestart() < pb->getStartRetries()){
+				return this->startProcess(*proc, *pb);
+			}
+			
+			proc->setState(ProcInfo::E_STATE_FATAL);
+			
+		}
+	}
+	proc->setPid(-1);
+	proc->setEndTime(time(NULL));
+
+	// TODO ProcInfo.logState()
+
+}
+
 void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 {
 	try
@@ -55,27 +104,14 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 		pid_t pid;
 
 		pid = fork();
-		int oldOut = dup(STDOUT_FILENO);
-		int oldErr = dup(STDERR_FILENO);
 		if (pid == 0)
 		{
-			// open log files for stdout and stderr
+			
+			int oldOut = dup(STDOUT_FILENO);
+			int oldErr = dup(STDERR_FILENO);
 			int fd, fderr;
-			std::string outFile = pInfo.getName() + "_" + pInfo.getHash() + "_stdout.txt";
-			std::string errFile = pInfo.getName() + "_" + pInfo.getHash() + "_stderr.txt";
-			std::string outPath(prg.getLogOut() + "/" + outFile);
-			std::string errPath(prg.getLogErr() + "/" + errFile);
-
-			if ((fd = open(outPath.c_str(), O_CREAT | O_APPEND | O_WRONLY)) < 0)
-				throw std::runtime_error("error open " + outPath + "\n");
-			if ((fderr = open(errPath.c_str(), O_CREAT | O_APPEND | O_WRONLY)) < 0)
-				throw std::runtime_error("error open " + errPath + "\n");
-
-			// redirection out and err into log files
-			if (dup2(fd, STDOUT_FILENO) < 0)
-				throw std::runtime_error("premier dup\n");
-			if (dup2(fderr, STDERR_FILENO) < 0)
-				throw std::runtime_error("deuxieme dup\n");
+			// open process log files for stdout and stderr + pipe stdin
+			fileProcHandler(pInfo, fd, fderr, prg);
 
 			// change working directory if specified
 			if (prg.getWorkDir().empty() == false)
@@ -83,8 +119,10 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 
 			// set up for execve - argument and environment variables
 			char **env = setExecveEnv(prg.getEnv());
-			char **arg = (char**)malloc(sizeof(char*));
-			bzero(arg, sizeof(char*));
+			char **arg = (char**)malloc(sizeof(char*) * 2);
+			arg[0] = (char*)(prg.getCmd().c_str());
+			arg[1] = 0;
+
 			if (execve(prg.getCmd().c_str(), arg, env) < 0)
 			{
 				// free arg and env + redirect stdout and stderr back
@@ -95,7 +133,9 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 				close(fderr);
 				// TODO: il y a toujours 2 process. Je pense il faut exit avec un
 				// code  d'erreur !!!!!
-				throw std::runtime_error(std::string("Execve failed: ") + strerror(errno) + "\n");
+				// throw std::runtime_error(std::string("Execve failed: ") + strerror(errno) + "\n");
+				std::cerr << "ERROR EXCEVE\n";			// TODO remove and better exit
+				exit(1);
 			}
 		}
 		else if (pid > 0)
@@ -104,8 +144,9 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 			pInfo.setState(ProcInfo::E_STATE_STARTING);
 			pInfo.setPid(pid);
 			int nbRes = pInfo.getNbRestart();
-			pInfo.setNbRestart(nbRes++);
+			pInfo.setNbRestart(++nbRes);
 			logger_->iAll("Process " + pInfo.getName() + " started\n");
+			std::cout << "pid is " << pInfo.getPid() << std::endl; // TODO remove
 		}
 		else
 		{
@@ -118,9 +159,38 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 	}
 }
 
+void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr, const ProgramBlock& prg)
+{
+	mode_t mode = umask(prg.getUmask());   // sauvegarder l'ancienne valeur mode_t
+	std::string outFile = pInfo.getName() + "_" + pInfo.getHash() + "_stdout.txt";
+	std::string errFile = pInfo.getName() + "_" + pInfo.getHash() + "_stderr.txt";
+	std::string outPath(prg.getLogOut() + "/" + outFile);
+	std::string errPath(prg.getLogErr() + "/" + errFile);
+
+	if ((fd = open(outPath.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0)
+		throw std::runtime_error("Open " + outPath + " : " +  strerror(errno) + "\n");
+	if ((fderr = open(errPath.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0)
+		throw std::runtime_error("error open " + errPath + "\n");
+
+	// redirection out and err into log files
+	if (dup2(fd, STDOUT_FILENO) < 0)
+		throw std::runtime_error(std::string("dup2 stdout failed : ") + strerror(errno) + "\n");
+	if (dup2(fderr, STDERR_FILENO) < 0)
+		throw std::runtime_error(std::string("dup2 stderr failed : ") + strerror(errno) + "\n");
+	
+	int pipefd[2];
+	if (pipe(pipefd) == -1)
+		throw std::runtime_error("pipe\n");
+	// for command /bin/cat
+	if (dup2(pipefd[0], STDIN_FILENO) < 0)
+		throw std::runtime_error(std::string("dup2 stdin failed : ") + strerror(errno) + "\n");
+	
+	umask(mode);	// umask at its initial state
+}
+
 char** Spawner::setExecveEnv(const std::vector<std::string> &vecEnv)
 {
-	char **env;
+	static char **env;
 	int nbEnv = vecEnv.size();
 	env = (char**)malloc(sizeof(char*) * (nbEnv + 1));
 	if (env == NULL)
@@ -129,12 +199,31 @@ char** Spawner::setExecveEnv(const std::vector<std::string> &vecEnv)
 	bzero(env, sizeof(*env));
 	for (int i = 0; i < nbEnv; i++)
 	{
-		// env[1] ????? env[i] plutot non ?
-		env[1] = strdup(vecEnv[i].c_str());
+		env[i] = strdup(vecEnv[i].c_str());
 	}
-
+	env[nbEnv] = 0;
 	return env;
 }
+
+// char** Spawner::setExecveArg(std::string const &cmd)
+// {
+// 	int word = 0;
+// 	bool lastIsSpace=false;
+// 	if (isspace(cmd[0]))
+// 		lastIsSpace=true;
+// 	else
+// 		word++;
+// 	for (size_t i=1; i < cmd.size(); i++)
+// 	{
+// 		if (isspace(cmd[i]))
+// 			lastIsSpace=true;
+// 		else if (lastIsSpace && !isspace(cmd[i]))
+// 		{
+// 			word++;
+// 			lastIsSpace=false;
+// 		}
+// 	}
+// }
 
 void Spawner::freeExecveArg(char** arg, char** env, size_t size)
 {

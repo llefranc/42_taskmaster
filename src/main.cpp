@@ -15,8 +15,9 @@
 
 #include "TaskMaster.hpp"
 
-int g_nbProcessZombies = 0;
-int g_isSigHupReceived = 0;
+volatile int g_nbProcessZombies = 0;
+volatile int g_isSigHupReceived = 0;
+int g_nbZombiesCleaned = 0;
 
 void recvSigHup(int signal)
 {
@@ -28,6 +29,7 @@ void recvSigChld(int signal)
 {
 	if (signal == SIGCHLD)
 		++g_nbProcessZombies;
+	// std::cout << "SIGCHILD : processZombies=" << g_nbProcessZombies << "  | ZombiesCleaned=" << g_nbZombiesCleaned << " \n";  // TODO remove
 }
 
 int main(int ac, char **av, char **env)
