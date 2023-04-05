@@ -17,6 +17,8 @@
 #include <string>
 #include <string.h>
 
+extern int g_nbZombiesCleaned;
+extern volatile int g_nbProcessZombies;
 
 /* ----------------------------------------------- */
 /* ---------------- COPLIEN FORM ----------------- */
@@ -75,8 +77,11 @@ void TaskMaster::shellRoutine()
 	while (true)
 	{
 		pollRet = poll(&pfd, 1, 0);
-		if (pollRet & POLLIN)
-		{
+		if (g_nbProcessZombies > g_nbZombiesCleaned){
+			spawner_.unSpawnProcess(pbList_);
+			g_nbZombiesCleaned++;
+		} 
+		else if (pollRet & POLLIN) {
 			if (read(0, buf, sizeof(buf)) == -1) {
 				throw std::runtime_error("Read failed: "
 						+ std::string(strerror(errno))
@@ -170,7 +175,7 @@ int TaskMaster::execStart(const std::vector<std::string> &tokens)
 	     itList != pbList_.end(); itList++) {
 
 		if (itList->getName() == pblockCopyName) {
-			std::vector<ProcInfo> proc = itList->getProcInfos();
+			std::vector<ProcInfo>& proc = itList->getProcInfos();
 			for (size_t i =0; i < proc.size(); i++) {
 
 				if (proc[i].getName() == tokens[1]) {
@@ -199,7 +204,6 @@ int TaskMaster::execStop(const std::vector<std::string> &tokens)
 		log_->eUser("Too many arguments\n");
 		goto err;
 	}
-	std::
 	for (std::list<ProgramBlock>::iterator itList = pbList_.begin();
 	     itList != pbList_.end(); itList++) {
 
@@ -209,7 +213,6 @@ int TaskMaster::execStop(const std::vector<std::string> &tokens)
 
 				if (proc[i].getName() == tokens[1]) {
 					std::cout << "stopping process\n";
-					spawner_.unSpawnProcess(proc[i], *itList);
 				}
 				else if (i == proc.size() - 1)
 					log_->eAll("Process name not found\n");

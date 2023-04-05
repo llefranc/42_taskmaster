@@ -20,9 +20,6 @@
 #include "Spawner.hpp"
 #include "ProgramBlock.hpp"
 
-extern int g_nbProcessZombies;
-extern int g_isSigHupReceived;
-
 class TaskMaster
 {
 	private:

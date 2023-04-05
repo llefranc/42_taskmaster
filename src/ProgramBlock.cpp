@@ -352,6 +352,23 @@ void ProgramBlock::print() const
 	std::cout << "--------------------------" << std::endl;
 }
 
+ProcInfo *ProgramBlock::getProcInfoByPid(int pid)
+{
+	for (size_t i =0; i < procInfos_.size(); i++) {
+		if (procInfos_[i].getPid() == pid) 
+			return &procInfos_[i];
+	}
+	return NULL;
+}
+
+ProcInfo *ProgramBlock::getProcInfoByName(const std::string &name)
+{
+	for (size_t i =0; i < procInfos_.size(); i++) {
+		if (procInfos_[i].getName() == name) 
+			return &procInfos_[i];
+	}
+	return NULL;
+}
 
 /* ----------------------------------------------- */
 /* ---------------- HELPER FUNCS------------------ */

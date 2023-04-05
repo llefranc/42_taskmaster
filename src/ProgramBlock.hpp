@@ -67,6 +67,9 @@ class ProgramBlock
 		const std::string& getLogOut() const;
 		const std::string& getLogErr() const;
 		const std::vector<std::string>& getEnv() const;
+		ProcInfo *getProcInfoByPid(int pid);
+		ProcInfo *getProcInfoByName(const std::string &name);
+
 
 
 		/* ----------------------------------------------- */

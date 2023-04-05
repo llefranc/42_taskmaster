@@ -8,7 +8,10 @@
 #include <iostream>
 #include <sys/stat.h>
 #include <signal.h>
+#include <sys/wait.h>
 
+extern int g_nbZombiesCleaned;
+extern volatile int g_nbProcessZombies;  // TODO inutile a supprimer
 
 Spawner::Spawner()
 	: logger_(NULL)
@@ -33,7 +36,7 @@ void Spawner::startProgramBlock(ProgramBlock& prg)
 	try
 	{
 		std::vector<ProcInfo>::iterator it;
-		std::vector<ProcInfo> pInfo = prg.getProcInfos();
+		std::vector<ProcInfo> &pInfo = prg.getProcInfos();
 		for (it = pInfo.begin(); it != pInfo.end(); it++)
 		{
 			int pState = it->getState();
@@ -49,9 +52,51 @@ void Spawner::startProgramBlock(ProgramBlock& prg)
 
 }
 
-void Spawner::unSpawnProcess(ProcInfo& pInfo, const ProgramBlock& prg)
+void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 {
-	kill(pInfo.getPid(), prg.getStopSignal());
+	int status= -1;
+	int pidChild = wait(&status);
+
+	ProcInfo *proc = NULL;
+	ProgramBlock *pb = NULL;
+	for (std::list<ProgramBlock>::iterator it = pbList.begin();
+	      it != pbList.end(); it++) {
+		proc = it->getProcInfoByPid(pidChild);
+		if (proc){
+			pb = &(*it);
+			break;
+		}
+	}
+
+	if (proc == NULL || pb == NULL) {
+		logger_->eAll("Process PID not found\n");
+		return ;
+	}
+
+	// std::cout << "find :" << pb->getName() << "  " << proc->getName() <<std::endl;
+	// std::cout << "restart of process is :" << pb->getAutoRestart() <<std::endl;
+	if (proc->getState() != ProcInfo::PC_STATE_STOP) {
+		std::cout << "the state is not Stop\n";
+		if (pb->getAutoRestart() == 0) { // TODO in enums
+			std::cout << " NO restart in config\n";
+			proc->setState(ProcInfo::PC_STATE_STOP); // TODO not the same version as diagram => state =exited
+		}
+		else if (pb->getAutoRestart() == 1 || (pb->getAutoRestart() == 2 &&
+			   pb->getExitCodes().find(status) != pb->getExitCodes().end())) {
+			std::cout << "need to restart\n";
+			if (proc->getNbRestart() < pb->getStartRetries()){
+				std::cout << "start process in unspawn\n";
+				return this->startProcess(*proc, *pb);}
+			else {
+				proc->setState(ProcInfo::PC_STATE_FATAL);
+			}
+		}
+	}
+	proc->setPid(-1);
+	proc->setEndTime(time(NULL));
+
+	// TODO ProcInfo.logState()
+
 }
 
 void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
@@ -63,11 +108,19 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 		pid = fork();
 		if (pid == 0)
 		{
+			int pipefd[2];
+			if (pipe(pipefd) == -1)
+				throw std::runtime_error("pipe\n");
+			
 			int oldOut = dup(STDOUT_FILENO);
 			int oldErr = dup(STDERR_FILENO);
 			int fd, fderr;
 			// open process log files for stdout and stderr
 			fileProcHandler(pInfo, fd, fderr, prg);
+
+			// for command /bin/cat
+			if (dup2(pipefd[0], STDIN_FILENO) < 0)
+				throw std::runtime_error(std::string("dup2 stdin failed : ") + strerror(errno) + "\n");
 
 			// change working directory if specified
 			if (prg.getWorkDir().empty() == false)
@@ -89,7 +142,9 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 				close(fderr);
 				// TODO: il y a toujours 2 process. Je pense il faut exit avec un
 				// code  d'erreur !!!!!
-				throw std::runtime_error(std::string("Execve failed: ") + strerror(errno) + "\n");
+				// throw std::runtime_error(std::string("Execve failed: ") + strerror(errno) + "\n");
+				std::cerr << "ERROR EXCEVE\n";			// TODO remove and better exit
+				exit(1);
 			}
 		}
 		else if (pid > 0)
@@ -100,6 +155,7 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 			int nbRes = pInfo.getNbRestart();
 			pInfo.setNbRestart(nbRes++);
 			logger_->iAll("Process " + pInfo.getName() + " started\n");
+			std::cout << "pid is " << pInfo.getPid() << std::endl; // TODO remove
 		}
 		else
 		{
@@ -127,9 +183,10 @@ void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr, const 
 
 	// redirection out and err into log files
 	if (dup2(fd, STDOUT_FILENO) < 0)
-		throw std::runtime_error("premier dup\n");
+		throw std::runtime_error(std::string("dup2 stdout failed : ") + strerror(errno) + "\n");
 	if (dup2(fderr, STDERR_FILENO) < 0)
-		throw std::runtime_error("deuxieme dup\n");
+		throw std::runtime_error(std::string("dup2 stderr failed : ") + strerror(errno) + "\n");
+
 	
 	umask(mode);	// umask at its initial state
 }

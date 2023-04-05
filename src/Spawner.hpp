@@ -4,12 +4,8 @@
 #include "ProgramBlock.hpp"
 #include "ProcInfo.hpp"
 #include "Logger.hpp"
+#include <list>
 
-/* TODO
-	implement command with arguments
-	state when spawning
-	unpawn
-*/
 class Spawner
 {
 	public:
@@ -22,7 +18,7 @@ class Spawner
 
 		void startProgramBlock(ProgramBlock&);
 		void startProcess(ProcInfo&, const ProgramBlock&);
-		void unSpawnProcess(ProcInfo&, const ProgramBlock&);
+		void unSpawnProcess(std::list<ProgramBlock>&);
 
 
 	private:
