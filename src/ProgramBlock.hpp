@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 14:54:11 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/03 16:06:45 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/05 12:53:10 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,7 +126,14 @@ class ProgramBlock
 
 
 		/* ----------------------------------------------- */
-		/* ---------------- HELPER FUNCS------------------ */
+		/* ------- NON-MEMBER FUNCTION OVERLOADS --------- */
+
+		friend bool operator==(const ProgramBlock& lhs,
+				const ProgramBlock& rhs);
+
+
+		/* ----------------------------------------------- */
+		/* ---------------- HELPER FUNCS ----------------- */
 
 		friend void swap(ProgramBlock &a, ProgramBlock &b);
 

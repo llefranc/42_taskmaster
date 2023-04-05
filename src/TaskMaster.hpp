@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:22 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/05 11:01:23 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/05 11:22:49 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,12 @@ class TaskMaster
 
 		std::vector<std::string> splitEntry(const std::string line);
 		void updatePbList(std::list<ProgramBlock> *newPbList);
+		std::list<ProgramBlock>::iterator findPbByName(
+				std::list<ProgramBlock> *pbList,
+				const std::string &name);
+		void getProgExecutionInfoByName(const std::string& name,
+				std::pair<ProgramBlock*, ProcInfo*> &info);
+
 		int execCmd(const std::vector<std::string> &tokens);
 		int execStatus(const std::vector<std::string> &tokens);
 		int execStart(const std::vector<std::string> &tokens);
@@ -71,9 +77,6 @@ class TaskMaster
 		int execRestart(const std::vector<std::string> &tokens);
 		int execReload(const std::vector<std::string> &tokens);
 		int execExit(const std::vector<std::string> &tokens);
-		void getProgExecutionInfoByName(const std::string& name,
-				std::pair<ProgramBlock*, ProcInfo*> &info,
-				bool bprocInfo=true);
 
 		/* ----------------------------------------------- */
 		/*------------------ ATTRIBUTES ------------------ */

@@ -6,15 +6,14 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:17:16 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/03 17:12:10 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/05 15:16:53 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ProgramBlock.hpp"
 
 #include <iostream>
-
-#include <signal.h>
+#include <csignal>
 
 
 /**
@@ -332,44 +331,52 @@ void ProgramBlock::clear()
 */
 void ProgramBlock::print() const
 {
-	std::cout << "state_=" << state_ << std::endl;
-	int i = 0;
-	for (std::vector<ProcInfo>::const_iterator it = procInfos_.begin();
-			it != procInfos_.end(); ++it, ++i) {
-		std::cout << "procInfo[" << i << "]=" << it->toString() << "\n";
-	}
+	static const std::string stateStr[5] = {
+		"E_PB_STATE_NEW",
+		"E_PB_STATE_UNCHANGE",
+		"E_PB_STATE_CHANGE",
+		"E_PB_STATE_CHANGE_REMOVE",
+		"E_PB_STATE_REMOVE",
+	};
+
+	std::cout << "state_=" << stateStr[state_] << std::endl;
+	// int i = 0;
+	// for (std::vector<ProcInfo>::const_iterator it = procInfos_.begin();
+	// 		it != procInfos_.end(); ++it, ++i) {
+	// 	std::cout << "procInfo[" << i << "]=" << it->toString() << "\n";
+	// }
 	std::cout << "name_=" << name_ << std::endl;
-	std::cout << "cmd_=" << cmd_ << std::endl;
-	std::cout << "numProcs_=" << numProcs_ << std::endl;
-	std::cout << "umask_=" << std::oct << umask_ << std::dec << std::endl;
-	std::cout << "workDir_=" << workDir_ << std::endl;
-	std::cout << "autoStart_=" << autoStart_ << std::endl;
-	std::cout << "autoRestart_=" << autoRestart_ << std::endl;
-	std::cout << "startRetries_=" << startRetries_ << std::endl;
-	std::cout << "startTime_=" << startTime_ << std::endl;
+	// std::cout << "cmd_=" << cmd_ << std::endl;
+	// std::cout << "numProcs_=" << numProcs_ << std::endl;
+	// std::cout << "umask_=" << std::oct << umask_ << std::dec << std::endl;
+	// std::cout << "workDir_=" << workDir_ << std::endl;
+	// std::cout << "autoStart_=" << autoStart_ << std::endl;
+	// std::cout << "autoRestart_=" << autoRestart_ << std::endl;
+	// std::cout << "startRetries_=" << startRetries_ << std::endl;
+	// std::cout << "startTime_=" << startTime_ << std::endl;
 
-	i = 0;
-	for (std::set<int>::const_iterator it = exitCodes_.begin();
-			it != exitCodes_.end(); ++it, ++i) {
-		std::cout << "exitCodes_[" << i << "]=" << *it << "\n";
-	}
+	// i = 0;
+	// for (std::set<int>::const_iterator it = exitCodes_.begin();
+	// 		it != exitCodes_.end(); ++it, ++i) {
+	// 	std::cout << "exitCodes_[" << i << "]=" << *it << "\n";
+	// }
 
-	std::cout << "stopSignal_=" << stopSignal_ << std::endl;
-	std::cout << "logOut_=" << logOut_ << std::endl;
-	std::cout << "logErr_=" << logErr_ << std::endl;
+	// std::cout << "stopSignal_=" << stopSignal_ << std::endl;
+	// std::cout << "logOut_=" << logOut_ << std::endl;
+	// std::cout << "logErr_=" << logErr_ << std::endl;
 
-	i = 0;
-	for (std::vector<std::string>::const_iterator it = env_.begin();
-			it != env_.end(); ++it, ++i) {
-		std::cout << "env_[" << i << "]=" << *it << "\n";
-	}
+	// i = 0;
+	// for (std::vector<std::string>::const_iterator it = env_.begin();
+	// 		it != env_.end(); ++it, ++i) {
+	// 	std::cout << "env_[" << i << "]=" << *it << "\n";
+	// }
 	std::cout << "--------------------------" << std::endl;
 }
 
 ProcInfo *ProgramBlock::getProcInfoByPid(int pid)
 {
 	for (size_t i =0; i < procInfos_.size(); i++) {
-		if (procInfos_[i].getPid() == pid) 
+		if (procInfos_[i].getPid() == pid)
 			return &procInfos_[i];
 	}
 	return NULL;
@@ -378,10 +385,32 @@ ProcInfo *ProgramBlock::getProcInfoByPid(int pid)
 ProcInfo *ProgramBlock::getProcInfoByName(const std::string &name)
 {
 	for (size_t i =0; i < procInfos_.size(); i++) {
-		if (procInfos_[i].getName() == name) 
+		if (procInfos_[i].getName() == name)
 			return &procInfos_[i];
 	}
 	return NULL;
+}
+
+/* ----------------------------------------------- */
+/* ------- NON-MEMBER FUNCTION OVERLOADS --------- */
+
+bool operator==(const ProgramBlock& lhs, const ProgramBlock& rhs)
+{
+	return lhs.name_ == rhs.name_ &&
+		lhs.cmd_ == rhs.cmd_ &&
+		lhs.numProcs_ == rhs.numProcs_ &&
+		lhs.umask_ == rhs.umask_ &&
+		lhs.workDir_ == rhs.workDir_ &&
+		lhs.autoStart_ == rhs.autoStart_ &&
+		lhs.autoRestart_ == rhs.autoRestart_ &&
+		lhs.startRetries_ == rhs.startRetries_ &&
+		lhs.startTime_ == rhs.startTime_ &&
+		lhs.exitCodes_ == rhs.exitCodes_ &&
+		lhs.stopSignal_ == rhs.stopSignal_ &&
+		lhs.stopTime_ == rhs.stopTime_ &&
+		lhs.logOut_ == rhs.logOut_ &&
+		lhs.logErr_ == rhs.logErr_ &&
+		lhs.env_ == rhs.env_;
 }
 
 /* ----------------------------------------------- */
