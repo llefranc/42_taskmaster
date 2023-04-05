@@ -9,15 +9,22 @@
 class Spawner
 {
 	public:
+		/* ----------------------------------------------- */
+		/* ---------------- COPLIEN FORM ----------------- */
 		Spawner();
 		~Spawner();
 		Spawner(const Spawner&) = delete;
 
+		/* ----------------------------------------------- */
+		/* ------------- SETTERS / GETTERS --------------- */
 		Logger *getLogger() const;
 		void setLogger(Logger *log);
 
+		/* ----------------------------------------------- */
+		/* ------------------- METHODS ------------------- */
 		void startProgramBlock(ProgramBlock&);
 		void startProcess(ProcInfo&, const ProgramBlock&);
+		void stopProcess(ProcInfo&, const ProgramBlock&);
 		void unSpawnProcess(std::list<ProgramBlock>&);
 
 

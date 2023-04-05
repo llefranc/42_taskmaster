@@ -69,31 +69,30 @@ void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 	}
 
 	if (proc == NULL || pb == NULL) {
-		logger_->eAll("Process PID not found\n");
+		logger_->eUser("Process PID not found\n");
 		return ;
 	}
 
 	if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
-
-		if (pb->getAutoRestart() == ProgramBlock::E_AUTO_FALSE || 
+		long now = time(NULL);
+		if (now - proc->getStartTime() < pb->getStartTime())
+			proc->setState(ProcInfo::E_STATE_BACKOFF);
+		else if (pb->getAutoRestart() == ProgramBlock::E_AUTO_FALSE || 
 		       (pb->getAutoRestart() == ProgramBlock::E_AUTO_UNEXP &&
 		       pb->getExitCodes().find(status) != pb->getExitCodes().end())) { 
 			proc->setState(ProcInfo::E_STATE_EXITED);
 		}
-		else {
-
-			if (proc->getNbRestart() < pb->getStartRetries()){
+		if (pb->getAutoRestart() == ProgramBlock::E_AUTO_TRUE) {
+			if (proc->getNbRestart() < pb->getStartRetries())
 				return this->startProcess(*proc, *pb);
-			}
-			
 			proc->setState(ProcInfo::E_STATE_FATAL);
-			
 		}
+	}
+	else {
+		proc->setNbRestart(0);
 	}
 	proc->setPid(-1);
 	proc->setEndTime(time(NULL));
-
-	// TODO ProcInfo.logState()
 
 }
 
@@ -133,20 +132,17 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 				close(fderr);
 				// TODO: il y a toujours 2 process. Je pense il faut exit avec un
 				// code  d'erreur !!!!!
-				// throw std::runtime_error(std::string("Execve failed: ") + strerror(errno) + "\n");
-				std::cerr << "ERROR EXCEVE\n";			// TODO remove and better exit
-				exit(1);
+				throw std::runtime_error(std::string("Execve failed: ") + strerror(errno));
 			}
 		}
 		else if (pid > 0)
 		{
 			pInfo.setStartTime(time(NULL));
+			pInfo.setEndTime(0);
 			pInfo.setState(ProcInfo::E_STATE_STARTING);
 			pInfo.setPid(pid);
 			int nbRes = pInfo.getNbRestart();
 			pInfo.setNbRestart(++nbRes);
-			logger_->iAll("Process " + pInfo.getName() + " started\n");
-			std::cout << "pid is " << pInfo.getPid() << std::endl; // TODO remove
 		}
 		else
 		{
@@ -158,6 +154,14 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 		throw e;
 	}
 }
+
+void Spawner::stopProcess(ProcInfo& proc, const ProgramBlock& pb)
+{
+	kill(proc.getPid(), pb.getStopSignal());
+	proc.setState(ProcInfo::E_STATE_STOPPED);
+	proc.setEndTime(time(NULL));
+}
+
 
 void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr, const ProgramBlock& prg)
 {

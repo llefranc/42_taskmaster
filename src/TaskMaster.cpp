@@ -17,6 +17,7 @@
 #include <string>
 #include <string.h>
 #include <ctime>
+#include <signal.h>
 
 extern int g_nbZombiesCleaned;
 extern volatile int g_nbProcessZombies;
@@ -185,12 +186,18 @@ int TaskMaster::execStart(const std::vector<std::string> &tokens)
 	
 	getProgExecutionInfoByName(tokens[1], infoExec);
 
-	if (infoExec.second == NULL){
+	if (infoExec.second == NULL)
 		log_->eAll("Process name not found\n");
-		return SHELL_CONTINUE;
-	}
+	else if (infoExec.second->getState() == ProcInfo::E_STATE_RUNNING)
+		log_->iUser("Process " + tokens[1] + " is alreading running\n");
+	else{
+		spawner_.startProcess(*infoExec.second, *infoExec.first);
+		
+		processStarting(infoExec.second->getStartTime(), infoExec.first->getStartTime());
+		infoExec.second->setState(ProcInfo::E_STATE_RUNNING);
 
-	spawner_.startProcess(*infoExec.second, *infoExec.first);
+		log_->iAll("Process " + tokens[1] + " started\n");
+	}
 	return SHELL_CONTINUE;
 
 err:
@@ -200,7 +207,7 @@ err:
 
 int TaskMaster::execStop(const std::vector<std::string> &tokens)
 {
-	std::string pblockCopyName = tokens[1].substr(0, tokens[1].find("_"));
+	std::pair<ProgramBlock*, ProcInfo*> infoExec;
 
 	if (tokens.size() == 1) {
 		log_->eUser("Missing program name\n");
@@ -209,24 +216,19 @@ int TaskMaster::execStop(const std::vector<std::string> &tokens)
 		log_->eUser("Too many arguments\n");
 		goto err;
 	}
-	for (std::list<ProgramBlock>::iterator itList = pbList_.begin();
-	     itList != pbList_.end(); itList++) {
+	
+	getProgExecutionInfoByName(tokens[1], infoExec);
 
-		if (itList->getName() == pblockCopyName) {
-			std::vector<ProcInfo> proc = itList->getProcInfos();
-			for (size_t i =0; i < proc.size(); i++) {
-
-				if (proc[i].getName() == tokens[1]) {
-					std::cout << "stopping process\n";
-				}
-				else if (i == proc.size() - 1)
-					log_->eAll("Process name not found\n");
-			}
-			return SHELL_CONTINUE;
-		}
+	if (infoExec.second == NULL)
+		log_->eUser("Process name not found\n");
+	else if (infoExec.second->getState() == ProcInfo::E_STATE_STOPPED)
+		log_->iUser("Process " + tokens[1] + " is already stopped\n");
+	else{
+		spawner_.stopProcess(*infoExec.second, *infoExec.first);
+		
+		processStopping(infoExec.second->getEndTime(), infoExec.first->getStopTime(), *infoExec.second);
+		log_->iAll("Process " + tokens[1] + " stopped\n");
 	}
-
-	std::cout << "exec stop" << std::endl;
 	return SHELL_CONTINUE;
 
 err:
@@ -244,7 +246,9 @@ int TaskMaster::execRestart(const std::vector<std::string> &tokens)
 		goto err;
 	}
 
-	std::cout << "exec restart" << std::endl;
+	execStop(tokens);
+	execStart(tokens);
+
 	return SHELL_CONTINUE;
 
 err:
@@ -282,7 +286,7 @@ err:
 }
 
 
-void TaskMaster::getProgExecutionInfoByName(const std::string& name, std::pair<ProgramBlock*, ProcInfo*>& info, bool bProcInfo)
+void TaskMaster::getProgExecutionInfoByName(const std::string& name, std::pair<ProgramBlock*, ProcInfo*>& info)
 {
 	std::string pblockCopyName = name.substr(0, name.find("_"));
 	
@@ -293,8 +297,6 @@ void TaskMaster::getProgExecutionInfoByName(const std::string& name, std::pair<P
 	     itList != pbList_.end(); itList++) {
 
 		if (itList->getName() == pblockCopyName) {
-			if (!bProcInfo)
-				return;
 			ProcInfo *proc = itList->getProcInfoByName(name);
 			if (proc != NULL){
 				info.first = &(*itList);
@@ -304,3 +306,32 @@ void TaskMaster::getProgExecutionInfoByName(const std::string& name, std::pair<P
 		}
 	}
 }
+
+void TaskMaster::processStarting(long startTime, long elapseTime)
+{
+	long now = time(NULL);
+	 while (now - startTime < elapseTime) {
+		if (g_nbProcessZombies > g_nbZombiesCleaned){
+			spawner_.unSpawnProcess(pbList_);
+			g_nbZombiesCleaned++;
+		} 
+		now = time(NULL);
+	}
+}
+void TaskMaster::processStopping(long stopTime, long elapseTime, const ProcInfo &proc)
+{
+	long now = time(NULL);
+
+	while (proc.getPid() > 0) {
+		if (g_nbProcessZombies > g_nbZombiesCleaned){
+			spawner_.unSpawnProcess(pbList_);
+			g_nbZombiesCleaned++;
+		} 
+		now = time(NULL);
+
+		if (now - stopTime > elapseTime) {
+			kill(proc.getPid(), 9);
+		}
+	}
+}
+
