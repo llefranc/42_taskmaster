@@ -29,7 +29,6 @@ void recvSigChld(int signal)
 {
 	if (signal == SIGCHLD)
 		++g_nbProcessZombies;
-	// std::cout << "SIGCHILD : processZombies=" << g_nbProcessZombies << "  | ZombiesCleaned=" << g_nbZombiesCleaned << " \n";  // TODO remove
 }
 
 int main(int ac, char **av, char **env)
