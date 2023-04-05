@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 14:54:11 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/20 17:34:42 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/03 16:06:45 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,18 +23,41 @@ class ProgramBlock
 {
 	public:
 
+		/**
+		 * The 5 possible states of a ProgramBlock (PB) :
+		 *
+		 * @E_PB_STATE_NEW:
+		 * 	This PB was seen for the first tiime in config file.
+		 * 	No special case to treat.
+		 * @E_STATE_UNCHANGE:
+		 * 	A reload occured and nothing was changed in this PB.
+		 * 	No special case to treat.
+		 * @E_STATE_CHANGE:
+		 * 	A reload occured and this PB was modified. This is the
+		 * 	new version of PB that will now be used for taskmaster
+		 * 	commands.
+		 * @E_PB_STATE_CHANGE_REMOVE :
+		 * 	A reload occured and this PB was modified. This is the
+		 * 	previous PB version that need to be destroyed.
+		 * @E_PB_STATE_REMOVE:
+		 * 	A reload occured and this PB is not existing anymore in
+		 * 	config file, it will be removed.
+		*/
 		static enum {
-			PB_STATE_REMOVE,
-			PB_STATE_CHANGE_REMOVE,
-			PB_STATE_NEW,
-			PB_STATE_CHANGE,
-			PB_STATE_UNCHANGE,
+			E_PB_STATE_NEW,
+			E_PB_STATE_UNCHANGE,
+			E_PB_STATE_CHANGE,
+			E_PB_STATE_CHANGE_REMOVE,
+			E_PB_STATE_REMOVE,
 		} E_prgmBlockState;
 
+		/**
+		 * The 3 possible values for autoStart_ attribute.
+		*/
 		static enum {
-			AUTO_FALSE,
-			AUTO_TRUE,
-			AUTO_UNEXP,
+			E_AUTO_FALSE,
+			E_AUTO_TRUE,
+			E_AUTO_UNEXP,
 		} E_auto;
 
 
@@ -113,12 +136,12 @@ class ProgramBlock
 
 	private:
 
-		int state_;			// default: PB_STATE_NEW
+		int state_;			// default: E_PB_STATE_NEW
 		std::vector<ProcInfo> procInfos_;
 		std::string name_;		// mandatory
 		std::string cmd_; 		// mandatory
 		int numProcs_;			// default: 1
-		int umask_;			// default: 0022
+		int umask_;			// default: 0022 (octal value)
 		std::string workDir_;		// default: ""
 		bool autoStart_;		// default: false
 		int autoRestart_;		// default: false

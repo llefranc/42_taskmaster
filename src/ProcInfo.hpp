@@ -2,17 +2,20 @@
 # define PROC_INFO_HPP
 
 #include <string>
+#include <ctime>
 
 class ProcInfo
 {
 	public:
 
 		static enum {
-			PC_STATE_STOP,
-			PC_STATE_CRASHED,
-			PC_STATE_STARTING,
-			PC_STATE_RUNNING,
-			PC_STATE_FATAL,
+			E_STATE_STOPPED,
+			E_STATE_STARTING,
+			E_STATE_RUNNING,
+			E_STATE_BACKOFF,
+			E_STATE_STOPPING,
+			E_STATE_EXITED,
+			E_STATE_FATAL,
 		} E_procState;
 
 
@@ -53,6 +56,7 @@ class ProcInfo
 		/* ----------------------------------------------- */
 		/* ------------------- METHODS ------------------- */
 
+		void updateState(std::time_t starttime);
 		std::string toString() const;
 
 
@@ -72,8 +76,8 @@ class ProcInfo
 		std::string hash_;
 		pid_t pid_;
 		int nbRestart_;
-		long startTime_;
-		long endTime_;
+		time_t startTime_; /* renommer ces variables en spawn unspawn ? */
+		time_t endTime_;
 };
 
 #endif // PROC_INFO_HPP

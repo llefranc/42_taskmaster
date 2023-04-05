@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/23 15:24:59 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/04 15:43:20 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <string>
 #include <string.h>
+#include <ctime>
 
 extern int g_nbZombiesCleaned;
 extern volatile int g_nbProcessZombies;
@@ -51,6 +52,9 @@ void TaskMaster::setLogger(Logger* log)
 /* ----------------------------------------------- */
 /* ------------------- METHODS ------------------- */
 
+/**
+ * Parse the configuration file for the first time.
+*/
 void TaskMaster::initConfigParser(const std::string &path)
 {
 	log_->iAll("Parsing configuration file (path: " + path + ")\n");
@@ -63,6 +67,10 @@ void TaskMaster::initConfigParser(const std::string &path)
 	}
 }
 
+/**
+ * - Wait for a command from user and execute it.
+ * - Execute the appropriate action when a child process dies.
+*/
 void TaskMaster::shellRoutine()
 {
 	int pollRet;
@@ -99,7 +107,6 @@ void TaskMaster::shellRoutine()
 					+ strerror(errno));
 		}
 	}
-	log_->iAll("Quitting taskmaster\n");
 }
 
 
@@ -149,8 +156,13 @@ int TaskMaster::execStatus(const std::vector<std::string> &tokens)
 		log_->eUser("Too many arguments\n");
 		goto err;
 	}
-
-	std::cout << "exec status" << std::endl;
+	for (std::list<ProgramBlock>::iterator it = pbList_.begin();
+	    it != pbList_.end(); ++it) {
+		for (size_t i = 0; i < it->getProcInfos().size(); ++i) {
+			it->getProcInfos()[i].updateState(it->getStartTime());
+			log_->iUser(it->getProcInfos()[i].toString() + "\n");
+		}
+	}
 	return SHELL_CONTINUE;
 
 err:
