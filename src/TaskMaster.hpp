@@ -70,7 +70,8 @@ class TaskMaster
 		int execRestart(const std::vector<std::string> &tokens);
 		int execReload(const std::vector<std::string> &tokens);
 		int execExit(const std::vector<std::string> &tokens);
-
+		void getProgExecutionInfoByName(const std::string& name, 
+			std::pair<ProgramBlock*, ProcInfo*>&, bool bprocInfo=true);
 
 		/* ----------------------------------------------- */
 		/*------------------ ATTRIBUTES ------------------ */

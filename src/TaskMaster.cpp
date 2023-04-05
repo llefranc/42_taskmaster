@@ -173,8 +173,8 @@ err:
 
 int TaskMaster::execStart(const std::vector<std::string> &tokens)
 {
-	std::string pblockCopyName = tokens[1].substr(0, tokens[1].find("_"));
-	
+	std::pair<ProgramBlock*, ProcInfo*> infoExec;
+
 	if (tokens.size() == 1) {
 		log_->eUser("Missing program name\n");
 		goto err;
@@ -182,23 +182,16 @@ int TaskMaster::execStart(const std::vector<std::string> &tokens)
 		log_->eUser("Too many arguments\n");
 		goto err;
 	}
+	
+	getProgExecutionInfoByName(tokens[1], infoExec);
 
-	for (std::list<ProgramBlock>::iterator itList = pbList_.begin();
-	     itList != pbList_.end(); itList++) {
-
-		if (itList->getName() == pblockCopyName) {
-			std::vector<ProcInfo>& proc = itList->getProcInfos();
-			for (size_t i =0; i < proc.size(); i++) {
-
-				if (proc[i].getName() == tokens[1]) {
-					spawner_.startProcess(proc[i], *itList);
-				}
-				else if (i == proc.size() - 1)
-					log_->eAll("Process name not found\n");
-			}
-			return SHELL_CONTINUE;
-		}
+	if (infoExec.second == NULL){
+		log_->eAll("Process name not found\n");
+		return SHELL_CONTINUE;
 	}
+
+	spawner_.startProcess(*infoExec.second, *infoExec.first);
+	return SHELL_CONTINUE;
 
 err:
 	log_->iUser("Usage: start [program_name]\n");
@@ -288,3 +281,26 @@ err:
 	return SHELL_CONTINUE;
 }
 
+
+void TaskMaster::getProgExecutionInfoByName(const std::string& name, std::pair<ProgramBlock*, ProcInfo*>& info, bool bProcInfo)
+{
+	std::string pblockCopyName = name.substr(0, name.find("_"));
+	
+	info.first = NULL;
+	info.second = NULL;
+
+	for (std::list<ProgramBlock>::iterator itList = pbList_.begin();
+	     itList != pbList_.end(); itList++) {
+
+		if (itList->getName() == pblockCopyName) {
+			if (!bProcInfo)
+				return;
+			ProcInfo *proc = itList->getProcInfoByName(name);
+			if (proc != NULL){
+				info.first = &(*itList);
+				info.second = proc;
+				return;
+			}
+		}
+	}
+}

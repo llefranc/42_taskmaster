@@ -73,23 +73,21 @@ void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 		return ;
 	}
 
-	// std::cout << "find :" << pb->getName() << "  " << proc->getName() <<std::endl;
-	// std::cout << "restart of process is :" << pb->getAutoRestart() <<std::endl;
-	if (proc->getState() != ProcInfo::PC_STATE_STOP) {
-		std::cout << "the state is not Stop\n";
-		if (pb->getAutoRestart() == 0) { // TODO in enums
-			std::cout << " NO restart in config\n";
-			proc->setState(ProcInfo::PC_STATE_STOP); // TODO not the same version as diagram => state =exited
+	if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
+
+		if (pb->getAutoRestart() == ProgramBlock::E_AUTO_FALSE || 
+		       (pb->getAutoRestart() == ProgramBlock::E_AUTO_UNEXP &&
+		       pb->getExitCodes().find(status) != pb->getExitCodes().end())) { 
+			proc->setState(ProcInfo::E_STATE_EXITED);
 		}
-		else if (pb->getAutoRestart() == 1 || (pb->getAutoRestart() == 2 &&
-			   pb->getExitCodes().find(status) != pb->getExitCodes().end())) {
-			std::cout << "need to restart\n";
+		else {
+
 			if (proc->getNbRestart() < pb->getStartRetries()){
-				std::cout << "start process in unspawn\n";
-				return this->startProcess(*proc, *pb);}
-			else {
-				proc->setState(ProcInfo::PC_STATE_FATAL);
+				return this->startProcess(*proc, *pb);
 			}
+			
+			proc->setState(ProcInfo::E_STATE_FATAL);
+			
 		}
 	}
 	proc->setPid(-1);
@@ -108,19 +106,12 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 		pid = fork();
 		if (pid == 0)
 		{
-			int pipefd[2];
-			if (pipe(pipefd) == -1)
-				throw std::runtime_error("pipe\n");
 			
 			int oldOut = dup(STDOUT_FILENO);
 			int oldErr = dup(STDERR_FILENO);
 			int fd, fderr;
-			// open process log files for stdout and stderr
+			// open process log files for stdout and stderr + pipe stdin
 			fileProcHandler(pInfo, fd, fderr, prg);
-
-			// for command /bin/cat
-			if (dup2(pipefd[0], STDIN_FILENO) < 0)
-				throw std::runtime_error(std::string("dup2 stdin failed : ") + strerror(errno) + "\n");
 
 			// change working directory if specified
 			if (prg.getWorkDir().empty() == false)
@@ -153,7 +144,7 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 			pInfo.setState(ProcInfo::E_STATE_STARTING);
 			pInfo.setPid(pid);
 			int nbRes = pInfo.getNbRestart();
-			pInfo.setNbRestart(nbRes++);
+			pInfo.setNbRestart(++nbRes);
 			logger_->iAll("Process " + pInfo.getName() + " started\n");
 			std::cout << "pid is " << pInfo.getPid() << std::endl; // TODO remove
 		}
@@ -186,7 +177,13 @@ void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr, const 
 		throw std::runtime_error(std::string("dup2 stdout failed : ") + strerror(errno) + "\n");
 	if (dup2(fderr, STDERR_FILENO) < 0)
 		throw std::runtime_error(std::string("dup2 stderr failed : ") + strerror(errno) + "\n");
-
+	
+	int pipefd[2];
+	if (pipe(pipefd) == -1)
+		throw std::runtime_error("pipe\n");
+	// for command /bin/cat
+	if (dup2(pipefd[0], STDIN_FILENO) < 0)
+		throw std::runtime_error(std::string("dup2 stdin failed : ") + strerror(errno) + "\n");
 	
 	umask(mode);	// umask at its initial state
 }
