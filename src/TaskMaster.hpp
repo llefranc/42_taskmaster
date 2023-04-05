@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:22 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/23 15:38:52 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/05 10:47:58 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,7 @@ class TaskMaster
 	private:
 
 		std::vector<std::string> splitEntry(const std::string line);
+		void updatePbList(std::list<ProgramBlock> *newPbList);
 		int execCmd(const std::vector<std::string> &tokens);
 		int execStatus(const std::vector<std::string> &tokens);
 		int execStart(const std::vector<std::string> &tokens);
@@ -73,7 +74,6 @@ class TaskMaster
 		int execRestart(const std::vector<std::string> &tokens);
 		int execReload(const std::vector<std::string> &tokens);
 		int execExit(const std::vector<std::string> &tokens);
-
 
 		/* ----------------------------------------------- */
 		/*------------------ ATTRIBUTES ------------------ */

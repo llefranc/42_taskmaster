@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/04 11:10:43 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/05 10:33:03 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,6 +148,8 @@ std::list<ProgramBlock> ConfigParser::load(const std::string &cfPath)
 	std::ifstream ifs(cfPath);
 
 	checkFileOpening(&ifs, cfPath);
+	lineNb = 0;
+	cfPath_ = cfPath;
 
 	while (std::getline(ifs, line)) {
 		++lineNb;
@@ -176,6 +178,15 @@ std::list<ProgramBlock> ConfigParser::load(const std::string &cfPath)
 	generateProcInfos(&pbList);
 	ifs.close();
 	return pbList;
+}
+
+/**
+ * Parse again the configuration file and generate the list of ProgramBlocks. If
+ * an error occurs, abort the parsing and throw a std::runtime_error exception.
+*/
+std::list<ProgramBlock> ConfigParser::reload()
+{
+	return load(cfPath_);
 }
 
 

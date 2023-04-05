@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/03 17:09:32 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/05 10:25:57 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ class ConfigParser
 		/* ------------------- METHODS ------------------- */
 
 		std::list<ProgramBlock> load(const std::string &cfPath);
-		// int reload(Logger *log, const std::string &cfPath);
+		std::list<ProgramBlock> reload();
 
 
 		/* ----------------------------------------------- */

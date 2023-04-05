@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/04 15:43:20 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/05 10:58:55 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -223,14 +223,46 @@ err:
 
 }
 
+void printPbList(const std::list<ProgramBlock> &pbList)
+{
+	for (std::list<ProgramBlock>::const_iterator it = pbList.begin();
+	     it != pbList.end(); ++it) {
+		it->print();
+	}
+}
+
+void TaskMaster::updatePbList(std::list<ProgramBlock> *newPbList)
+{
+	// parcourir toute la liste de l'ancien et checker si present dans la
+	// new.
+	// SI PAS PRESENT : state a remove et on l'insere au debut de la new
+	// SI PRESENT ET UNCHANGED : mettre le state de celui dans la new a unchanged
+	// SI PRESENT ET CHANGED : mettre le state de celui dans la new a changed +
+	//                         state dans l'ancienne a changed remove et l'inserer
+	//                         dans la liste
+	// d'abord mettre les states a remove et les inserer au fur et a
+	// mesure au debut de la liste.
+}
+
+
 int TaskMaster::execReload(const std::vector<std::string> &tokens)
 {
+	std::list<ProgramBlock> newPbList;
+
 	if (tokens.size() > 1) {
 		log_->eUser("Too many arguments\n");
 		goto err;
 	}
 
 	std::cout << "exec reload" << std::endl;
+	try {
+		newPbList = configParser_.reload();
+		std::cout << "---------------- New list ----------------\n";
+		printPbList(newPbList);
+		std::cout << "------------------------------------------\n";
+	} catch (const std::runtime_error &e) {
+		log_->eUser(e.what());
+	}
 	return SHELL_CONTINUE;
 
 err:
