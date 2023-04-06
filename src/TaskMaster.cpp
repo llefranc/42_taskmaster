@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/06 14:30:14 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/06 14:46:53 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,6 +79,7 @@ void TaskMaster::shellRoutine()
 	std::vector<std::string> tokens;
 	struct pollfd pfd = {.fd = 0, .events = POLLIN, .revents = 0};
 
+	spawner_.autostart(pbList_);
 	log_->iUser("Launching shell\n");
 	log_->iUser("------------------------\n");
 	log_->iUser("taskmaster> ");
@@ -256,13 +257,13 @@ err:
 
 }
 
-// void printPbList(const std::list<ProgramBlock> &pbList)
-// {
-// 	for (std::list<ProgramBlock>::const_iterator it = pbList.begin();
-// 	     it != pbList.end(); ++it) {
-// 		it->print();
-// 	}
-// }
+void printPbList(const std::list<ProgramBlock> &pbList)
+{
+	for (std::list<ProgramBlock>::const_iterator it = pbList.begin();
+	     it != pbList.end(); ++it) {
+		it->print();
+	}
+}
 
 /**
  * Search for a ProgramBlock matching name and return an iterator to it, or an
@@ -332,21 +333,36 @@ int TaskMaster::execReload(const std::vector<std::string> &tokens)
 		newPbList = configParser_.reload();
 		updatePbList(&newPbList);
 
-		/*
-		 * ici stop les REMOVE/CHANGE_REMOVE + start les CHANGE et NEW
-		 * >>> Quand on stop un REMOVE log:
-		 * pb_name: stopped >> log stopped meme si deja stop
-		 * pb_name: removed process group
-		 *
-		 * >>> Quand on stop un CHANGE_REMOVE log:
-		 * pb_name: stopped >> log stopped meme si deja stop
-		 * pb_name: updated process group
-		 *
-		 * >>> run le truc autostart + Quand on rencontre un NEW log:
-		 * pb_name: added process group
-		 */
+		std::list<ProgramBlock>::iterator it = newPbList.begin();
+		printPbList(newPbList);
 
-		// pblist = newpblist >> set ensuite pblist sur newpblist
+		for (; it != newPbList.end(); it = newPbList.begin()) {
+			if (it->getState() == ProgramBlock::E_PB_STATE_REMOVE) {
+
+				spawner_.stopAllProcess(it->getProcInfos(), *it);
+				log_->iUser(it->getName() + ": stopped\n");
+				log_->iUser(it->getName() + ": removed process group\n");
+				newPbList.remove(*it);
+			}
+			else if  (it->getState() == ProgramBlock::E_PB_STATE_CHANGE_REMOVE) {
+				spawner_.stopAllProcess(it->getProcInfos(), *it);
+				log_->iUser(it->getName() + ": stopped\n");
+				log_->iUser(it->getName() + ": updated process group\n");
+				newPbList.remove(*it);
+			}
+			else {
+				while (it != newPbList.end()) {
+					if (it->getState() == ProgramBlock::E_PB_STATE_NEW)
+						log_->iUser(it->getName() + ": added process group\n");
+					it++;
+				}
+				break;
+			}
+
+		}
+		spawner_.autostart(newPbList);
+
+		pbList_ = newPbList;
 
 	} catch (const std::runtime_error &e) {
 		log_->eUser(e.what());
@@ -360,9 +376,15 @@ err:
 
 int TaskMaster::execExit(const std::vector<std::string> &tokens)
 {
+	std::list<ProgramBlock>::iterator it = pbList_.begin();
+
 	if (tokens.size() > 1) {
 		log_->eUser("Too many arguments\n");
 		goto err;
+	}
+
+	for (; it != pbList_.end(); it++) {
+		spawner_.stopAllProcess(it->getProcInfos(), *it);
 	}
 	return SHELL_EXIT;
 

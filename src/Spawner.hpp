@@ -26,8 +26,10 @@ class Spawner
 		/* ------------------- METHODS ------------------- */
 
 		void startProgramBlock(ProgramBlock&);
+		void autostart(std::list<ProgramBlock>&);
 		void startProcess(ProcInfo&, const ProgramBlock&);
 		void stopProcess(ProcInfo&, const ProgramBlock&);
+		void stopAllProcess(std::vector<ProcInfo>& vec, const ProgramBlock& pb);
 		void unSpawnProcess(std::list<ProgramBlock>&);
 
 	private:
@@ -37,6 +39,7 @@ class Spawner
 		char **strVecToCArray(const std::vector<std::string> &);
 		std::vector<std::string> splitCmdArgs(const std::string& cmd);
 		void freeExecveArg(char **av, char **env);
+
 
 	private:
 
