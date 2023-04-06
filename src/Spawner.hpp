@@ -22,10 +22,12 @@ class Spawner
 
 		/* ----------------------------------------------- */
 		/* ------------------- METHODS ------------------- */
-		void startProgramBlock(ProgramBlock&);
+		void autostart(std::list<ProgramBlock>&);
 		void startProcess(ProcInfo&, const ProgramBlock&);
 		void stopProcess(ProcInfo&, const ProgramBlock&);
+		void stopAllProcess(std::vector<ProcInfo>& vec, const ProgramBlock& pb);
 		void unSpawnProcess(std::list<ProgramBlock>&);
+
 
 
 	private:

@@ -1,17 +1,16 @@
 #include "Spawner.hpp"
-#include <unistd.h>
-#include <stdexcept>
 #include <fcntl.h>
 #include <string.h>
-#include <time.h>
-#include <ctype.h>
-#include <iostream>
+#include <ctime>
 #include <sys/stat.h>
-#include <signal.h>
 #include <sys/wait.h>
 
+
 extern int g_nbZombiesCleaned;
-extern volatile int g_nbProcessZombies;  // TODO inutile a supprimer
+extern volatile int g_nbProcessZombies;
+
+/* ----------------------------------------------- */
+/* ---------------- COPLIEN FORM ----------------- */
 
 Spawner::Spawner()
 	: logger_(NULL)
@@ -20,6 +19,9 @@ Spawner::Spawner()
 Spawner::~Spawner()
 {
 }
+
+/* ----------------------------------------------- */
+/* ------------- GETTERS / SETTERS --------------- */
 
 Logger *Spawner::getLogger() const
 {
@@ -31,27 +33,44 @@ void Spawner::setLogger(Logger *logger)
 	logger_ = logger;
 }
 
-void Spawner::startProgramBlock(ProgramBlock& prg)
+/* ----------------------------------------------- */
+/* ------------------- METHODS ------------------- */
+
+/**
+ * Start all processes from all new programBlocks 
+ * it has to be configure as : autostart = true
+*/
+
+void Spawner::autostart(std::list<ProgramBlock>& pbList)
 {
 	try
 	{
-		std::vector<ProcInfo>::iterator it;
-		std::vector<ProcInfo> &pInfo = prg.getProcInfos();
-		for (it = pInfo.begin(); it != pInfo.end(); it++)
-		{
-			int pState = it->getState();
-			if (pState != ProcInfo::E_STATE_STARTING || pState != ProcInfo::E_STATE_RUNNING)
-				startProcess(*it, prg);
-		}
+		std::list<ProgramBlock>::iterator it = pbList.begin();
 
+		for (; it != pbList.end(); it++) {
+
+			if (it->getAutoStart() == true 
+			  && (it->getState() == ProgramBlock::E_PB_STATE_NEW || 
+			  it->getState() == ProgramBlock::E_PB_STATE_CHANGE)) {
+
+				std::vector<ProcInfo>& proc = it->getProcInfos();
+				for (size_t i = 0; i < proc.size(); i++) {
+					startProcess(proc[i], *it);
+				}
+			}
+		}
 	}
 	catch(std::runtime_error & e)
 	{
 		throw e;
 	}
-
 }
 
+
+/**
+ * wait pid and find the right ProcInfo 
+ * clean and update status of process
+*/
 void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 {
 	int status= -1;
@@ -96,6 +115,9 @@ void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 
 }
 
+/**
+ * start and update state of process
+*/
 void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 {
 	try
@@ -155,11 +177,29 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 	}
 }
 
+
 void Spawner::stopProcess(ProcInfo& proc, const ProgramBlock& pb)
 {
-	kill(proc.getPid(), pb.getStopSignal());
+	if (kill(proc.getPid(), pb.getStopSignal()) < 0)
+		throw std::runtime_error(std::string("kill failed") + strerror(errno));
 	proc.setState(ProcInfo::E_STATE_STOPPED);
 	proc.setEndTime(time(NULL));
+}
+
+/**
+ * kill a list of processes of ProgramBlock
+*/
+void Spawner::stopAllProcess(std::vector<ProcInfo>& vec, const ProgramBlock& pb)
+{
+	for (size_t i = 0; i < vec.size(); i++) {
+		if (vec[i].getPid() > 0) {
+			stopProcess(vec[i], pb);
+			while (g_nbProcessZombies == g_nbZombiesCleaned) ;
+			int status;
+			wait(&status);
+			g_nbZombiesCleaned++;
+		}
+	}
 }
 
 
@@ -192,6 +232,9 @@ void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr, const 
 	umask(mode);	// umask at its initial state
 }
 
+/**
+ * Return environment variables array 
+*/
 char** Spawner::setExecveEnv(const std::vector<std::string> &vecEnv)
 {
 	static char **env;
