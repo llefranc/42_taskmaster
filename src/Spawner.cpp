@@ -1,13 +1,15 @@
 #include "Spawner.hpp"
+
 #include <fcntl.h>
 #include <string.h>
 #include <ctime>
 #include <sys/stat.h>
 #include <sys/wait.h>
-
+#include <cstdlib>
 
 extern int g_nbZombiesCleaned;
 extern volatile int g_nbProcessZombies;
+
 
 /* ----------------------------------------------- */
 /* ---------------- COPLIEN FORM ----------------- */
@@ -19,6 +21,7 @@ Spawner::Spawner()
 Spawner::~Spawner()
 {
 }
+
 
 /* ----------------------------------------------- */
 /* ------------- GETTERS / SETTERS --------------- */
@@ -33,65 +36,55 @@ void Spawner::setLogger(Logger *logger)
 	logger_ = logger;
 }
 
+
 /* ----------------------------------------------- */
 /* ------------------- METHODS ------------------- */
 
 /**
- * Start all processes from all new programBlocks
- * it has to be configure as : autostart = true
+ * Start all processes from all new ProgramBlocks with token autostart set to
+ * true.
 */
-
 void Spawner::autostart(std::list<ProgramBlock>& pbList)
 {
-	try
-	{
-		std::list<ProgramBlock>::iterator it = pbList.begin();
+	std::list<ProgramBlock>::iterator it = pbList.begin();
 
-		for (; it != pbList.end(); it++) {
+	for (; it != pbList.end(); it++) {
 
-			if (it->getAutoStart() == true
-			  && (it->getState() == ProgramBlock::E_PB_STATE_NEW ||
-			  it->getState() == ProgramBlock::E_PB_STATE_CHANGE)) {
-
-				std::vector<ProcInfo>& proc = it->getProcInfos();
-				for (size_t i = 0; i < proc.size(); i++) {
-					startProcess(proc[i], *it);
-				}
+		if (it->getAutoStart() == true &&
+		    (it->getState() == ProgramBlock::E_STATE_NEW ||
+		    it->getState() == ProgramBlock::E_STATE_CHANGE)) {
+			std::vector<ProcInfo>& proc = it->getProcInfos();
+			for (size_t i = 0; i < proc.size(); i++) {
+				startProcess(proc[i], *it);
 			}
 		}
 	}
-	catch(std::runtime_error & e)
-	{
-		throw e;
-	}
 }
 
-
 /**
- * wait pid and find the right ProcInfo
- * clean and update status of process
+ * Wait pid and find the right ProcInfo. Clean and update status of process.
 */
 void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 {
 	int status = -1;
-	int pidChild = wait(&status);
-
+	int pidChild;
 	ProcInfo *proc = NULL;
 	ProgramBlock *pb = NULL;
+
+	pidChild = wait(&status);
 	for (std::list<ProgramBlock>::iterator it = pbList.begin();
 	      it != pbList.end(); it++) {
 		proc = it->getProcInfoByPid(pidChild);
-		if (proc){
+		if (proc) {
 			pb = &(*it);
 			break;
 		}
 	}
-
 	if (proc == NULL || pb == NULL) {
 		logger_->eUser("Process PID not found\n");
 		return ;
 	}
-	proc->setExitCode(status);
+	proc->setExitCode(WEXITSTATUS(status));
 
 	if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
 		long now = time(NULL);
@@ -100,14 +93,14 @@ void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 				proc->setState(ProcInfo::E_STATE_FATAL);
 			else
 				proc->setState(ProcInfo::E_STATE_BACKOFF);
-			
+
 		}
 		else if (pb->getAutoRestart() == ProgramBlock::E_AUTO_FALSE ||
 		       (pb->getAutoRestart() == ProgramBlock::E_AUTO_UNEXP &&
 		       pb->getExitCodes().find(status) != pb->getExitCodes().end())) {
 			proc->setState(ProcInfo::E_STATE_EXITED);
 		}
-		if (pb->getAutoRestart() == ProgramBlock::E_AUTO_TRUE ) {
+		if (pb->getAutoRestart() == ProgramBlock::E_AUTO_TRUE) {
 			if (proc->getNbRestart() < pb->getStartRetries())
 				return this->startProcess(*proc, *pb);
 			proc->setState(ProcInfo::E_STATE_FATAL);
@@ -175,7 +168,7 @@ std::vector<std::string> Spawner::splitCmdArgs(const std::string& cmd)
 		if (!buf[i])
 			break;
 
-		/* Strings and quotes portions next to each other are joined */
+		/* Strings and quoted portions next to each other are joined */
 		while (buf[i] && !isspace(buf[i])) {
 
 			/* -1 == quotes character not escaped */
@@ -198,7 +191,7 @@ std::vector<std::string> Spawner::splitCmdArgs(const std::string& cmd)
 }
 
 /**
- * start and update state of process
+ * Start and update state of process.
 */
 void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 {
@@ -207,18 +200,6 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 
 	pid = fork();
 	if (pid == 0) {
-		int fd, fderr;
-		// open process log files for stdout and stderr + pipe stdin
-		fileProcHandler(pInfo, fd, fderr, prg);
-
-		// change working directory if specified
-		if (prg.getWorkDir().empty() == false) {
-			if (chdir(prg.getWorkDir().c_str()) == -1) {
-				std::cerr << "Son workdir failed\n";
-				exit(EXIT_SPAWN_FAILED);
-			}
-		}
-
 		// set up for execve - argument and environment variables
 		char **env = strVecToCArray(prg.getEnv());
 		vecArgs = splitCmdArgs(prg.getCmd());
@@ -232,10 +213,19 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 			exit(EXIT_SPAWN_FAILED);
 		}
 
+		int fd, fderr;
+		// open process log files for stdout and stderr + pipe stdin
+		fileProcHandler(pInfo, fd, fderr, prg);
+
+		// change working directory if specified
+		if (prg.getWorkDir().empty() == false) {
+			if (chdir(prg.getWorkDir().c_str()) == -1) {
+				std::cerr << "Son workdir failed\n";
+				exit(EXIT_SPAWN_FAILED);
+			}
+		}
 		if (execve(av[0], av, env) < 0) {
 			freeExecveArg(av, env);
-			close(fd);
-			close(fderr);
 			std::cerr << "Son execve failed\n";
 			exit(EXIT_SPAWN_FAILED);
 		}
@@ -252,11 +242,13 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 	}
 }
 
-
 void Spawner::stopProcess(ProcInfo& proc, const ProgramBlock& pb)
 {
-	if (kill(proc.getPid(), pb.getStopSignal()) < 0)
-		throw std::runtime_error(std::string("kill failed") + strerror(errno));
+	if (proc.getPid() > 0) {
+		if (kill(proc.getPid(), pb.getStopSignal()) < 0)
+			throw std::runtime_error(std::string("kill failed")
+					+ strerror(errno));
+	}
 	proc.setState(ProcInfo::E_STATE_STOPPED);
 	proc.setUnSpawnTime(time(NULL));
 }
@@ -288,31 +280,26 @@ void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr, const 
 	if ((fd = open(outPath.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0) {
 		std::cerr << "Son open stdout failed\n";
 		exit(EXIT_FAILURE);
-		// throw std::runtime_error("Open " + outPath + " : " +  strerror(errno) + "\n");
 	}
 	if ((fderr = open(errPath.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0) {
 		std::cerr << "Son open stderr failed\n";
 		exit(EXIT_FAILURE);
-		// throw std::runtime_error("error open " + errPath + "\n");
 	}
 
 	// redirection out and err into log files
 	if (dup2(fd, STDOUT_FILENO) < 0) {
 		std::cerr << "Son dup2 stdout failed\n";
 		exit(EXIT_FAILURE);
-		// throw std::runtime_error(std::string("dup2 stdout failed : ") + strerror(errno) + "\n");
 	}
 	if (dup2(fderr, STDERR_FILENO) < 0) {
 		std::cerr << "Son dup2 stderr failed\n";
 		exit(EXIT_FAILURE);
-		// throw std::runtime_error(std::string("dup2 stderr failed : ") + strerror(errno) + "\n");
 	}
 
 	int pipefd[2];
 	if (pipe(pipefd) == -1) {
 		std::cerr << "Son pipe failed\n";
 		exit(EXIT_FAILURE);
-		// throw std::runtime_error("pipe\n");
 	}
 	// To avoid unexpected exit for program using stdin like /bin/cat
 	if (dup2(pipefd[0], STDIN_FILENO) < 0) {

@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 14:54:11 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/05 12:53:10 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/06 18:23:33 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ class ProgramBlock
 		/**
 		 * The 5 possible states of a ProgramBlock (PB) :
 		 *
-		 * @E_PB_STATE_NEW:
+		 * @E_STATE_NEW:
 		 * 	This PB was seen for the first tiime in config file.
 		 * 	No special case to treat.
 		 * @E_STATE_UNCHANGE:
@@ -36,19 +36,19 @@ class ProgramBlock
 		 * 	A reload occured and this PB was modified. This is the
 		 * 	new version of PB that will now be used for taskmaster
 		 * 	commands.
-		 * @E_PB_STATE_CHANGE_REMOVE :
+		 * @E_STATE_CHANGE_REMOVE :
 		 * 	A reload occured and this PB was modified. This is the
 		 * 	previous PB version that need to be destroyed.
-		 * @E_PB_STATE_REMOVE:
+		 * @E_STATE_REMOVE:
 		 * 	A reload occured and this PB is not existing anymore in
 		 * 	config file, it will be removed.
 		*/
 		static enum {
-			E_PB_STATE_NEW,
-			E_PB_STATE_UNCHANGE,
-			E_PB_STATE_CHANGE,
-			E_PB_STATE_CHANGE_REMOVE,
-			E_PB_STATE_REMOVE,
+			E_STATE_NEW,
+			E_STATE_UNCHANGE,
+			E_STATE_CHANGE,
+			E_STATE_CHANGE_REMOVE,
+			E_STATE_REMOVE,
 		} E_prgmBlockState;
 
 		/**
@@ -143,7 +143,7 @@ class ProgramBlock
 
 	private:
 
-		int state_;			// default: E_PB_STATE_NEW
+		int state_;			// default: E_STATE_NEW
 		std::vector<ProcInfo> procInfos_;
 		std::string name_;		// mandatory
 		std::string cmd_; 		// mandatory

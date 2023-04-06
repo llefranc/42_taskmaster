@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/17 17:05:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/06 14:36:18 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/06 18:29:20 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -173,11 +173,19 @@ void ProcInfo::setExitCode(uint8_t exitCode)
 /* ------------------- METHODS ------------------- */
 
 /**
+ * Return true if the process is eitheir in E_STATE_STARTING or E_STATE_RUNNING.
+*/
+bool ProcInfo::isRunning() const
+{
+	return state_ == E_STATE_STARTING || state_ == E_STATE_RUNNING;
+}
+
+/**
  * Udapte ProcInfo state from STARTING to RUNNING if the process is running
  * since long enough. If the process is in another state, does nothing.
  * @starttime: The starttime token of a program block from the config file.
 */
-void ProcInfo::updateState(std::time_t pbstarttime)
+void ProcInfo::updateStartingState(std::time_t pbstarttime)
 {
 	time_t now = std::time(NULL);
 

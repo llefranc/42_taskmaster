@@ -60,7 +60,8 @@ class ProcInfo
 		/* ----------------------------------------------- */
 		/* ------------------- METHODS ------------------- */
 
-		void updateState(std::time_t starttime);
+		bool isRunning() const;
+		void updateStartingState(std::time_t starttime);
 		std::string toString() const;
 
 

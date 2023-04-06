@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:22 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/05 15:23:52 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/06 17:47:47 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,9 +78,9 @@ class TaskMaster
 		int execReload(const std::vector<std::string> &tokens);
 		int execExit(const std::vector<std::string> &tokens);
 
-		int processStarting(long startTime, long elapseTime,
+		int processStarting(long spawnTime, long startTime,
 				ProcInfo& proc);
-		void processStopping(long startTime, long elapseTime,
+		void processStopping(long unSpawnTime, long endTime,
 				const ProcInfo &proc);
 
 

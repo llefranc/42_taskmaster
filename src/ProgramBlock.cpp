@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:17:16 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/05 15:16:53 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/06 18:23:33 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@
  * in ProgramBlock.hpp for more info.
 */
 ProgramBlock::ProgramBlock() :
-	state_(E_PB_STATE_NEW),
+	state_(E_STATE_NEW),
 	procInfos_(),
 	name_(),
 	cmd_(),
@@ -307,7 +307,7 @@ bool ProgramBlock::isCorrect() const
 */
 void ProgramBlock::clear()
 {
-	state_ = E_PB_STATE_NEW;
+	state_ = E_STATE_NEW;
 	procInfos_.clear();
 	name_ = "";
 	cmd_ = "";
@@ -332,11 +332,11 @@ void ProgramBlock::clear()
 void ProgramBlock::print() const
 {
 	static const std::string stateStr[5] = {
-		"E_PB_STATE_NEW",
-		"E_PB_STATE_UNCHANGE",
-		"E_PB_STATE_CHANGE",
-		"E_PB_STATE_CHANGE_REMOVE",
-		"E_PB_STATE_REMOVE",
+		"E_STATE_NEW",
+		"E_STATE_UNCHANGE",
+		"E_STATE_CHANGE",
+		"E_STATE_CHANGE_REMOVE",
+		"E_STATE_REMOVE",
 	};
 
 	std::cout << "state_=" << stateStr[state_] << std::endl;

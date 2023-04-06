@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/06 14:46:53 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/06 18:24:34 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,7 @@ void TaskMaster::shellRoutine()
 
 	spawner_.autostart(pbList_);
 	log_->iUser("Launching shell\n");
-	log_->iUser("------------------------\n");
+	execStatus(std::vector<std::string>(1, std::string("status")));
 	log_->iUser("taskmaster> ");
 
 	while (true)
@@ -117,6 +117,9 @@ void TaskMaster::shellRoutine()
 /* ----------------------------------------------- */
 /* --------------- PRIVATE METHODS --------------- */
 
+/**
+ * Split user entry into tokens using space as separator.
+*/
 std::vector<std::string> TaskMaster::splitEntry(const std::string line)
 {
 	int i = 0;
@@ -156,15 +159,18 @@ int TaskMaster::execCmd(const std::vector<std::string> &tokens)
 
 int TaskMaster::execStatus(const std::vector<std::string> &tokens)
 {
+	std::time_t startTime;
+
 	if (tokens.size() > 1) {
 		log_->eUser("Too many arguments\n");
 		goto err;
 	}
-	printPbList(pbList_);
+	// printPbList(pbList_);
 	for (std::list<ProgramBlock>::iterator it = pbList_.begin();
 	    it != pbList_.end(); ++it) {
 		for (size_t i = 0; i < it->getProcInfos().size(); ++i) {
-			it->getProcInfos()[i].updateState(it->getStartTime());
+			startTime = it->getStartTime();
+			it->getProcInfos()[i].updateStartingState(startTime);
 			log_->iUser(it->getProcInfos()[i].toString() + "\n");
 		}
 	}
@@ -189,15 +195,16 @@ int TaskMaster::execStart(const std::vector<std::string> &tokens)
 
 	getProgExecutionInfoByName(tokens[1], infoExec);
 
-	if (infoExec.second == NULL)
+	if (infoExec.second == NULL) {
 		log_->eAll("Process name not found\n");
-	else if (infoExec.second->getState() == ProcInfo::E_STATE_RUNNING)
-		log_->iUser("Process " + tokens[1] + " is alreading running\n");
-	else{
+	} else if (infoExec.second->isRunning()) {
+		log_->eUser("Process " + tokens[1] + " is alreading running\n");
+	} else {
 		spawner_.startProcess(*infoExec.second, *infoExec.first);
 
-		int started = processStarting(infoExec.second->getSpawnTime(), infoExec.first->getStartTime(), *infoExec.second);
-
+		int started = processStarting(infoExec.second->getSpawnTime(),
+		                              infoExec.first->getStartTime(),
+					      *infoExec.second);
 		if (!started)
 			log_->iUser("Start " + tokens[1] + " failed\n");
 		else
@@ -221,17 +228,17 @@ int TaskMaster::execStop(const std::vector<std::string> &tokens)
 		log_->eUser("Too many arguments\n");
 		goto err;
 	}
-
 	getProgExecutionInfoByName(tokens[1], infoExec);
 
-	if (infoExec.second == NULL)
+	if (infoExec.second == NULL) {
 		log_->eUser("Process name not found\n");
-	else if (infoExec.second->getState() == ProcInfo::E_STATE_STOPPED)
-		log_->iUser("Process " + tokens[1] + " is already stopped\n");
-	else{
+	} else if (!infoExec.second->isRunning()) {
+		log_->eUser("Process " + tokens[1] + " is not running\n");
+	} else {
 		spawner_.stopProcess(*infoExec.second, *infoExec.first);
-
-		processStopping(infoExec.second->getUnSpawnTime(), infoExec.first->getStopTime(), *infoExec.second);
+		processStopping(infoExec.second->getUnSpawnTime(),
+				infoExec.first->getStopTime(),
+				*infoExec.second);
 		log_->iAll("Process " + tokens[1] + " stopped\n");
 	}
 	return SHELL_CONTINUE;
@@ -250,10 +257,8 @@ int TaskMaster::execRestart(const std::vector<std::string> &tokens)
 		log_->eUser("Too many arguments\n");
 		goto err;
 	}
-
 	execStop(tokens);
 	execStart(tokens);
-
 	return SHELL_CONTINUE;
 
 err:
@@ -301,14 +306,14 @@ void TaskMaster::updatePbList(std::list<ProgramBlock> *newPbList)
 		match = findPbByName(newPbList, oldPb->getName());
 
 		if (match == newPbList->end()) {
-			oldPb->setState(ProgramBlock::E_PB_STATE_REMOVE);
+			oldPb->setState(ProgramBlock::E_STATE_REMOVE);
 			newPbList->insert(remPos, *oldPb);
 		} else if (*match == *oldPb) {
-			match->setState(ProgramBlock::E_PB_STATE_UNCHANGE);
+			match->setState(ProgramBlock::E_STATE_UNCHANGE);
 		} else {
-			oldPb->setState(ProgramBlock::E_PB_STATE_CHANGE_REMOVE);
+			oldPb->setState(ProgramBlock::E_STATE_CHANGE_REMOVE);
 			newPbList->insert(changRemPos, *oldPb);
-			match->setState(ProgramBlock::E_PB_STATE_CHANGE);
+			match->setState(ProgramBlock::E_STATE_CHANGE);
 			/*
 			 * True only for first change_remove insert, allows to
 			 * insert PB_STATE_REMOVE ProgramBlocks before
@@ -328,6 +333,7 @@ void TaskMaster::updatePbList(std::list<ProgramBlock> *newPbList)
 */
 int TaskMaster::execReload(const std::vector<std::string> &tokens)
 {
+	std::list<ProgramBlock>::iterator it;
 	std::list<ProgramBlock> newPbList;
 
 	if (tokens.size() > 1) {
@@ -336,42 +342,41 @@ int TaskMaster::execReload(const std::vector<std::string> &tokens)
 	}
 	try {
 		newPbList = configParser_.reload();
-		updatePbList(&newPbList);
-
-		std::list<ProgramBlock>::iterator it = newPbList.begin();
-		printPbList(newPbList);
-
-		for (; it != newPbList.end(); it = newPbList.begin()) {
-			if (it->getState() == ProgramBlock::E_PB_STATE_REMOVE) {
-
-				spawner_.stopAllProcess(it->getProcInfos(), *it);
-				log_->iUser(it->getName() + ": stopped\n");
-				log_->iUser(it->getName() + ": removed process group\n");
-				newPbList.remove(*it);
-			}
-			else if  (it->getState() == ProgramBlock::E_PB_STATE_CHANGE_REMOVE) {
-				spawner_.stopAllProcess(it->getProcInfos(), *it);
-				log_->iUser(it->getName() + ": stopped\n");
-				log_->iUser(it->getName() + ": updated process group\n");
-				newPbList.remove(*it);
-			}
-			else {
-				while (it != newPbList.end()) {
-					if (it->getState() == ProgramBlock::E_PB_STATE_NEW)
-						log_->iUser(it->getName() + ": added process group\n");
-					it++;
-				}
-				break;
-			}
-
-		}
-		spawner_.autostart(newPbList);
-
-		pbList_ = newPbList;
-
 	} catch (const std::runtime_error &e) {
 		log_->eUser(e.what());
+		return SHELL_CONTINUE;
 	}
+
+	updatePbList(&newPbList);
+	printPbList(newPbList);
+	it = newPbList.begin();
+	for (; it != newPbList.end(); it = newPbList.begin()) {
+		if (it->getState() == ProgramBlock::E_STATE_REMOVE) {
+
+			spawner_.stopAllProcess(it->getProcInfos(), *it);
+			log_->iUser(it->getName() + ": stopped\n");
+			log_->iUser(it->getName() + ": removed process group\n");
+			newPbList.remove(*it);
+		}
+		else if (it->getState() == ProgramBlock::E_STATE_CHANGE_REMOVE) {
+			spawner_.stopAllProcess(it->getProcInfos(), *it);
+			log_->iUser(it->getName() + ": stopped\n");
+			log_->iUser(it->getName() + ": updated process group\n");
+			newPbList.remove(*it);
+		}
+		else {
+			while (it != newPbList.end()) {
+				if (it->getState() == ProgramBlock::E_STATE_NEW)
+					log_->iUser(it->getName() + ": added process group\n");
+				it++;
+			}
+			break;
+		}
+
+	}
+	spawner_.autostart(newPbList);
+	pbList_ = newPbList;
+	execStatus(std::vector<std::string>(1, std::string("status")));
 	return SHELL_CONTINUE;
 
 err:
@@ -420,10 +425,10 @@ void TaskMaster::getProgExecutionInfoByName(const std::string& name,
 	}
 }
 
-int TaskMaster::processStarting(long startTime, long elapseTime, ProcInfo& proc)
+int TaskMaster::processStarting(long spawnTime, long startTime, ProcInfo& proc)
 {
 	long now = time(NULL);
-	while (now - startTime < elapseTime) {
+	while (now - spawnTime < startTime) {
 		if (g_nbProcessZombies > g_nbZombiesCleaned){
 			spawner_.unSpawnProcess(pbList_);
 			g_nbZombiesCleaned++;
@@ -436,7 +441,8 @@ int TaskMaster::processStarting(long startTime, long elapseTime, ProcInfo& proc)
 	return 1;
 }
 
-void TaskMaster::processStopping(long stopTime, long elapseTime, const ProcInfo &proc)
+void TaskMaster::processStopping(long unSpawnTime, long endTime,
+				 const ProcInfo &proc)
 {
 	long now = time(NULL);
 
@@ -447,7 +453,7 @@ void TaskMaster::processStopping(long stopTime, long elapseTime, const ProcInfo 
 		}
 		now = time(NULL);
 
-		if (now - stopTime > elapseTime) {
+		if (now - unSpawnTime > endTime) {
 			kill(proc.getPid(), SIGKILL);
 		}
 	}
