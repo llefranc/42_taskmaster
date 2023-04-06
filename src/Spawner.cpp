@@ -95,14 +95,19 @@ void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 
 	if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
 		long now = time(NULL);
-		if (now - proc->getStartTime() < pb->getStartTime())
-			proc->setState(ProcInfo::E_STATE_BACKOFF);
+		if (now - proc->getSpawnTime() < pb->getStartTime()) {
+			if (pb->getAutoRestart() == ProgramBlock::E_AUTO_FALSE)
+				proc->setState(ProcInfo::E_STATE_FATAL);
+			else
+				proc->setState(ProcInfo::E_STATE_BACKOFF);
+			
+		}
 		else if (pb->getAutoRestart() == ProgramBlock::E_AUTO_FALSE ||
 		       (pb->getAutoRestart() == ProgramBlock::E_AUTO_UNEXP &&
 		       pb->getExitCodes().find(status) != pb->getExitCodes().end())) {
 			proc->setState(ProcInfo::E_STATE_EXITED);
 		}
-		if (pb->getAutoRestart() == ProgramBlock::E_AUTO_TRUE) {
+		if (pb->getAutoRestart() == ProgramBlock::E_AUTO_TRUE ) {
 			if (proc->getNbRestart() < pb->getStartRetries())
 				return this->startProcess(*proc, *pb);
 			proc->setState(ProcInfo::E_STATE_FATAL);
@@ -112,7 +117,7 @@ void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 		proc->setNbRestart(0);
 	}
 	proc->setPid(-1);
-	proc->setEndTime(time(NULL));
+	proc->setUnSpawnTime(time(NULL));
 }
 
 /**
@@ -235,8 +240,8 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 			exit(EXIT_SPAWN_FAILED);
 		}
 	} else if (pid > 0) {
-		pInfo.setStartTime(time(NULL));
-		pInfo.setEndTime(0);
+		pInfo.setSpawnTime(time(NULL));
+		pInfo.setUnSpawnTime(0);
 		pInfo.setState(ProcInfo::E_STATE_STARTING);
 		pInfo.setPid(pid);
 		int nbRes = pInfo.getNbRestart();
@@ -253,7 +258,7 @@ void Spawner::stopProcess(ProcInfo& proc, const ProgramBlock& pb)
 	if (kill(proc.getPid(), pb.getStopSignal()) < 0)
 		throw std::runtime_error(std::string("kill failed") + strerror(errno));
 	proc.setState(ProcInfo::E_STATE_STOPPED);
-	proc.setEndTime(time(NULL));
+	proc.setUnSpawnTime(time(NULL));
 }
 
 /**

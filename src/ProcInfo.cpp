@@ -34,8 +34,8 @@ ProcInfo::ProcInfo() :
 	hash_(),
 	pid_(-1),
 	nbRestart_(0),
-	startTime_(0),
-	endTime_(0),
+	spawnTime_(0),
+	unSpawnTime_(0),
 	exitCode_(0)
 {}
 
@@ -47,8 +47,8 @@ ProcInfo::ProcInfo(const std::string &name) :
 	name_(name),
 	pid_(-1),
 	nbRestart_(0),
-	startTime_(0),
-	endTime_(0),
+	spawnTime_(0),
+	unSpawnTime_(0),
 	exitCode_(0)
 {
 	std::stringstream stream;
@@ -67,8 +67,8 @@ ProcInfo::ProcInfo(const ProcInfo& c) :
 	hash_(c.hash_),
 	pid_(c.pid_),
 	nbRestart_(c.nbRestart_),
-	startTime_(c.startTime_),
-	endTime_(c.endTime_),
+	spawnTime_(c.spawnTime_),
+	unSpawnTime_(c.unSpawnTime_),
 	exitCode_(c.exitCode_)
 {}
 
@@ -108,14 +108,14 @@ int ProcInfo::getNbRestart() const
 }
 
 
-long ProcInfo::getStartTime() const
+long ProcInfo::getSpawnTime() const
 {
-	return startTime_;
+	return spawnTime_;
 }
 
-long ProcInfo::getEndTime() const
+long ProcInfo::getUnSpawnTime() const
 {
-	return endTime_;
+	return unSpawnTime_;
 }
 
 uint8_t ProcInfo::getExitCode() const
@@ -153,14 +153,14 @@ void ProcInfo::setNbRestart(int nb)
 }
 
 
-void ProcInfo::setStartTime(long start)
+void ProcInfo::setSpawnTime(long spawnTime)
 {
-	startTime_ = start;
+	spawnTime_ = spawnTime;
 }
 
-void ProcInfo::setEndTime(long end)
+void ProcInfo::setUnSpawnTime(long unSpawnTime)
 {
-	endTime_ = end;
+	unSpawnTime_ = unSpawnTime;
 }
 
 void ProcInfo::setExitCode(uint8_t exitCode)
@@ -181,7 +181,7 @@ void ProcInfo::updateState(std::time_t pbstarttime)
 {
 	time_t now = std::time(NULL);
 
-	if (state_ == E_STATE_STARTING && now - startTime_ > pbstarttime)
+	if (state_ == E_STATE_STARTING && now - spawnTime_ > pbstarttime)
 		state_ = E_STATE_RUNNING;
 }
 
@@ -286,14 +286,14 @@ std::string ProcInfo::toString() const
 		str += "Spawn failed";
 	} else if (state_ == E_STATE_BACKOFF || state_ == E_STATE_FATAL) {
 		str += "Exited too quickly";
-	} else if (state_ == E_STATE_STOPPED && !startTime_) {
+	} else if (state_ == E_STATE_STOPPED && !spawnTime_) {
 		str += "Not started";
 	} else if (state_ == E_STATE_STOPPED || state_ == E_STATE_EXITED) {
 		strftime(buf, sizeof(buf), "%b %d %I:%M %p",
-			 std::localtime(&endTime_));
+			 std::localtime(&unSpawnTime_));
 		str += buf;
 	} else if (state_ == E_STATE_RUNNING) {
-		str += runningStateToStr(pid_, startTime_);
+		str += runningStateToStr(pid_, spawnTime_);
 	}
 	return str;
 }
@@ -309,8 +309,8 @@ void swap(ProcInfo &a, ProcInfo &b)
 	std::swap(a.hash_, b.hash_);
 	std::swap(a.pid_, b.pid_);
 	std::swap(a.nbRestart_, b.nbRestart_);
-	std::swap(a.startTime_, b.startTime_);
-	std::swap(a.endTime_, b.endTime_);
+	std::swap(a.spawnTime_, b.spawnTime_);
+	std::swap(a.unSpawnTime_, b.unSpawnTime_);
 	std::swap(a.exitCode_, b.exitCode_);
 }
 

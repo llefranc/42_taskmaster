@@ -78,7 +78,8 @@ class TaskMaster
 		int execReload(const std::vector<std::string> &tokens);
 		int execExit(const std::vector<std::string> &tokens);
 
-		void processStarting(long startTime, long elapseTime);
+		int processStarting(long startTime, long elapseTime,
+				ProcInfo& proc);
 		void processStopping(long startTime, long elapseTime,
 				const ProcInfo &proc);
 

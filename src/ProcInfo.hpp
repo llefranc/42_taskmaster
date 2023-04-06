@@ -39,8 +39,8 @@ class ProcInfo
 		const std::string& getHash() const;
 		int getPid() const;
 		int getNbRestart() const;
-		long getStartTime() const;
-		long getEndTime() const;
+		long getSpawnTime() const;
+		long getUnSpawnTime() const;
 		uint8_t getExitCode() const;
 
 
@@ -52,8 +52,8 @@ class ProcInfo
 		void setHash(const std::string &hash);
 		void setPid(int pid);
 		void setNbRestart(int nbRestart);
-		void setStartTime(long startTime);
-		void setEndTime(long endTime);
+		void setSpawnTime(long spawnTime);
+		void setUnSpawnTime(long unSpawnTime);
 		void setExitCode(uint8_t exitCode);
 
 
@@ -80,8 +80,8 @@ class ProcInfo
 		std::string hash_;
 		pid_t pid_;
 		int nbRestart_;
-		time_t startTime_; /* renommer ces variables en spawn unspawn ? */
-		time_t endTime_;
+		time_t spawnTime_; /* renommer ces variables en spawn unspawn ? */
+		time_t unSpawnTime_;
 		uint8_t exitCode_;
 };
 

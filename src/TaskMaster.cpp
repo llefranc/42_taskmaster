@@ -22,6 +22,8 @@
 extern int g_nbZombiesCleaned;
 extern volatile int g_nbProcessZombies;
 
+void printPbList(const std::list<ProgramBlock> &pbList); // TODO degager
+
 /* ----------------------------------------------- */
 /* ---------------- COPLIEN FORM ----------------- */
 
@@ -158,6 +160,7 @@ int TaskMaster::execStatus(const std::vector<std::string> &tokens)
 		log_->eUser("Too many arguments\n");
 		goto err;
 	}
+	printPbList(pbList_);
 	for (std::list<ProgramBlock>::iterator it = pbList_.begin();
 	    it != pbList_.end(); ++it) {
 		for (size_t i = 0; i < it->getProcInfos().size(); ++i) {
@@ -193,10 +196,12 @@ int TaskMaster::execStart(const std::vector<std::string> &tokens)
 	else{
 		spawner_.startProcess(*infoExec.second, *infoExec.first);
 
-		processStarting(infoExec.second->getStartTime(), infoExec.first->getStartTime());
-		infoExec.second->setState(ProcInfo::E_STATE_RUNNING);
+		int started = processStarting(infoExec.second->getSpawnTime(), infoExec.first->getStartTime(), *infoExec.second);
 
-		log_->iAll("Process " + tokens[1] + " started\n");
+		if (!started)
+			log_->iUser("Start " + tokens[1] + " failed\n");
+		else
+			log_->iAll("Process " + tokens[1] + " started\n");
 	}
 	return SHELL_CONTINUE;
 
@@ -226,7 +231,7 @@ int TaskMaster::execStop(const std::vector<std::string> &tokens)
 	else{
 		spawner_.stopProcess(*infoExec.second, *infoExec.first);
 
-		processStopping(infoExec.second->getEndTime(), infoExec.first->getStopTime(), *infoExec.second);
+		processStopping(infoExec.second->getUnSpawnTime(), infoExec.first->getStopTime(), *infoExec.second);
 		log_->iAll("Process " + tokens[1] + " stopped\n");
 	}
 	return SHELL_CONTINUE;
@@ -415,17 +420,22 @@ void TaskMaster::getProgExecutionInfoByName(const std::string& name,
 	}
 }
 
-void TaskMaster::processStarting(long startTime, long elapseTime)
+int TaskMaster::processStarting(long startTime, long elapseTime, ProcInfo& proc)
 {
 	long now = time(NULL);
-	 while (now - startTime < elapseTime) {
+	while (now - startTime < elapseTime) {
 		if (g_nbProcessZombies > g_nbZombiesCleaned){
 			spawner_.unSpawnProcess(pbList_);
 			g_nbZombiesCleaned++;
 		}
+		if (proc.getPid() < 0){
+			return 0;
+		}
 		now = time(NULL);
 	}
+	return 1;
 }
+
 void TaskMaster::processStopping(long stopTime, long elapseTime, const ProcInfo &proc)
 {
 	long now = time(NULL);
@@ -438,7 +448,7 @@ void TaskMaster::processStopping(long stopTime, long elapseTime, const ProcInfo 
 		now = time(NULL);
 
 		if (now - stopTime > elapseTime) {
-			kill(proc.getPid(), 9);
+			kill(proc.getPid(), SIGKILL);
 		}
 	}
 }
