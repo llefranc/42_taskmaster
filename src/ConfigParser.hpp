@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/05 10:25:57 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/06 14:07:14 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,6 @@ class ConfigParser
 		ConfigParser(const ConfigParser &c);
 		~ConfigParser();
 		ConfigParser& operator=(ConfigParser a);
-
 
 		/* ----------------------------------------------- */
 		/* ------------------- GETTERS ------------------- */

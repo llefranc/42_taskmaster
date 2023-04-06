@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/17 17:05:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/04 15:42:01 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/06 14:36:18 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,10 +32,11 @@ ProcInfo::ProcInfo() :
 	state_(E_STATE_STOPPED),
 	name_(),
 	hash_(),
-	pid_(0),
+	pid_(-1),
 	nbRestart_(0),
 	startTime_(0),
-	endTime_(0)
+	endTime_(0),
+	exitCode_(0)
 {}
 
 /**
@@ -44,10 +45,11 @@ ProcInfo::ProcInfo() :
 ProcInfo::ProcInfo(const std::string &name) :
 	state_(E_STATE_STOPPED),
 	name_(name),
-	pid_(0),
+	pid_(-1),
 	nbRestart_(0),
 	startTime_(0),
-	endTime_(0)
+	endTime_(0),
+	exitCode_(0)
 {
 	std::stringstream stream;
 	std::hash<std::string> hasher;
@@ -66,7 +68,8 @@ ProcInfo::ProcInfo(const ProcInfo& c) :
 	pid_(c.pid_),
 	nbRestart_(c.nbRestart_),
 	startTime_(c.startTime_),
-	endTime_(c.endTime_)
+	endTime_(c.endTime_),
+	exitCode_(c.exitCode_)
 {}
 
 ProcInfo& ProcInfo::operator=(ProcInfo a)
@@ -115,6 +118,11 @@ long ProcInfo::getEndTime() const
 	return endTime_;
 }
 
+uint8_t ProcInfo::getExitCode() const
+{
+	return exitCode_;
+}
+
 
 /* ----------------------------------------------- */
 /* ------------------- SETTERS ------------------- */
@@ -153,6 +161,11 @@ void ProcInfo::setStartTime(long start)
 void ProcInfo::setEndTime(long end)
 {
 	endTime_ = end;
+}
+
+void ProcInfo::setExitCode(uint8_t exitCode)
+{
+	exitCode_ = exitCode;
 }
 
 
@@ -269,7 +282,9 @@ std::string ProcInfo::toString() const
 	if (state_ != E_STATE_STARTING || state_ != E_STATE_STOPPING) {
 		str += std::string(STATUS_PADDING_LEN - str.length(), ' ');
 	}
-	if (state_ == E_STATE_BACKOFF || state_ == E_STATE_FATAL) {
+	if (state_ == E_STATE_FATAL && exitCode_ == EXIT_SPAWN_FAILED) {
+		str += "Spawn failed";
+	} else if (state_ == E_STATE_BACKOFF || state_ == E_STATE_FATAL) {
 		str += "Exited too quickly";
 	} else if (state_ == E_STATE_STOPPED && !startTime_) {
 		str += "Not started";
@@ -295,7 +310,8 @@ void swap(ProcInfo &a, ProcInfo &b)
 	std::swap(a.pid_, b.pid_);
 	std::swap(a.nbRestart_, b.nbRestart_);
 	std::swap(a.startTime_, b.startTime_);
-	std::swap(a.endTime_, b.startTime_);
+	std::swap(a.endTime_, b.endTime_);
+	std::swap(a.exitCode_, b.exitCode_);
 }
 
 /**

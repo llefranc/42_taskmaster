@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/05 15:29:32 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/06 14:30:14 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -256,13 +256,13 @@ err:
 
 }
 
-void printPbList(const std::list<ProgramBlock> &pbList)
-{
-	for (std::list<ProgramBlock>::const_iterator it = pbList.begin();
-	     it != pbList.end(); ++it) {
-		it->print();
-	}
-}
+// void printPbList(const std::list<ProgramBlock> &pbList)
+// {
+// 	for (std::list<ProgramBlock>::const_iterator it = pbList.begin();
+// 	     it != pbList.end(); ++it) {
+// 		it->print();
+// 	}
+// }
 
 /**
  * Search for a ProgramBlock matching name and return an iterator to it, or an

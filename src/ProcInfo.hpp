@@ -4,6 +4,8 @@
 #include <string>
 #include <ctime>
 
+#define EXIT_SPAWN_FAILED 126
+
 class ProcInfo
 {
 	public:
@@ -39,6 +41,7 @@ class ProcInfo
 		int getNbRestart() const;
 		long getStartTime() const;
 		long getEndTime() const;
+		uint8_t getExitCode() const;
 
 
 		/* ----------------------------------------------- */
@@ -51,6 +54,7 @@ class ProcInfo
 		void setNbRestart(int nbRestart);
 		void setStartTime(long startTime);
 		void setEndTime(long endTime);
+		void setExitCode(uint8_t exitCode);
 
 
 		/* ----------------------------------------------- */
@@ -78,6 +82,7 @@ class ProcInfo
 		int nbRestart_;
 		time_t startTime_; /* renommer ces variables en spawn unspawn ? */
 		time_t endTime_;
+		uint8_t exitCode_;
 };
 
 #endif // PROC_INFO_HPP
