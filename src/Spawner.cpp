@@ -62,16 +62,22 @@ void Spawner::autostart(std::list<ProgramBlock>& pbList)
 }
 
 /**
- * Wait pid and find the right ProcInfo. Clean and update status of process.
+ * Wait on any child process that has exited and find the right ProcInfo.
+ * Clean and update status of process.
+ *
+ * Return: 1 if there was a children process to unspawn, 0 if there was no
+ * 	   unwaited children, -1 if the child process PID was not found in
+ * 	   ProgramBlock list.
 */
-void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
+int Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 {
 	int status = -1;
 	int pidChild;
 	ProcInfo *proc = NULL;
 	ProgramBlock *pb = NULL;
 
-	pidChild = wait(&status);
+	if ((pidChild = waitpid(-1, &status, WNOHANG)) <= 0)
+		return 0;
 	for (std::list<ProgramBlock>::iterator it = pbList.begin();
 	      it != pbList.end(); it++) {
 		proc = it->getProcInfoByPid(pidChild);
@@ -82,9 +88,8 @@ void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 	}
 	if (proc == NULL || pb == NULL) {
 		logger_->eUser("Process PID not found\n");
-		return ;
+		return -1;
 	}
-	std::cout << "status=" << WEXITSTATUS(status) << std::endl;
 	proc->setExitCode(WEXITSTATUS(status));
 
 	if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
@@ -105,8 +110,10 @@ void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 		}
 		if (proc->getState() != ProcInfo::E_STATE_FATAL &&
 		    pb->getAutoRestart() == ProgramBlock::E_AUTO_TRUE) {
-			if (proc->getNbRestart() < pb->getStartRetries())
-				return this->startProcess(*proc, *pb);
+			if (proc->getNbRestart() < pb->getStartRetries()) {
+				startProcess(*proc, *pb);
+				return 1;
+			}
 			proc->setState(ProcInfo::E_STATE_FATAL);
 		}
 	}
@@ -115,6 +122,7 @@ void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 	}
 	proc->setPid(-1);
 	proc->setUnSpawnTime(time(NULL));
+	return 1;
 }
 
 /**
@@ -175,7 +183,7 @@ std::vector<std::string> Spawner::splitCmdArgs(const std::string& cmd)
 		/* Strings and quoted portions next to each other are joined */
 		while (buf[i] && !isspace(buf[i])) {
 
-			/* -1 == quotes character not escaped */
+			/* -1 corresponds to quotes character not escaped */
 			if (buf[i] == -1) {
 				start = ++i;
 				while (buf[i] && buf[i] != -1)

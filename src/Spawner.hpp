@@ -30,7 +30,7 @@ class Spawner
 		void startProcess(ProcInfo&, const ProgramBlock&);
 		void stopProcess(ProcInfo&, const ProgramBlock&);
 		void stopAllProcess(std::vector<ProcInfo>& vec, const ProgramBlock& pb);
-		void unSpawnProcess(std::list<ProgramBlock>&);
+		int unSpawnProcess(std::list<ProgramBlock>&);
 
 	private:
 

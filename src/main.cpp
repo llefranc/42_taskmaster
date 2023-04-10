@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:24:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/23 16:30:15 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/10 16:56:18 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,8 +27,8 @@ void recvSigHup(int signal)
 
 void recvSigChld(int signal)
 {
-	if (signal == SIGCHLD)
-		++g_nbProcessZombies;
+	(void)signal;
+	++g_nbProcessZombies;
 }
 
 int main(int ac, char **av, char **env)

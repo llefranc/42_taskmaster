@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/10 13:44:56 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/10 17:54:37 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,8 +89,8 @@ void TaskMaster::shellRoutine()
 	while (true)
 	{
 		pollRet = poll(&pfd, 1, 0);
-		if (g_nbProcessZombies > g_nbZombiesCleaned){
-			spawner_.unSpawnProcess(pbList_);
+		if (g_nbProcessZombies > g_nbZombiesCleaned) {
+			while (spawner_.unSpawnProcess(pbList_) > 0);
 			g_nbZombiesCleaned++;
 		}
 		else if (pollRet & POLLIN) {
