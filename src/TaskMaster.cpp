@@ -19,8 +19,7 @@
 #include <ctime>
 #include <csignal>
 
-extern int g_nbZombiesCleaned;
-extern volatile int g_nbProcessZombies;
+extern volatile int g_sigFlag;
 
 void printPbList(const std::list<ProgramBlock> &pbList); // TODO degager
 
@@ -64,10 +63,10 @@ void TaskMaster::initConfigParser(const std::string &path)
 	pbList_ = configParser_.load(path);
 	log_->iAll("Configuration file successfully loaded\n");
 
-	for (std::list<ProgramBlock>::iterator it = pbList_.begin();
-	    it != pbList_.end(); ++it) {
-		it->print();
-	}
+	// for (std::list<ProgramBlock>::iterator it = pbList_.begin();
+	//     it != pbList_.end(); ++it) {
+	// 	it->print();
+	// }
 }
 
 /**
@@ -89,9 +88,8 @@ void TaskMaster::shellRoutine()
 	while (true)
 	{
 		pollRet = poll(&pfd, 1, 0);
-		if (g_nbProcessZombies > g_nbZombiesCleaned) {
-			while (spawner_.unSpawnProcess(pbList_) > 0);
-			g_nbZombiesCleaned++;
+		if (g_sigFlag ){
+			signalOccured();
 		}
 		else if (pollRet & POLLIN) {
 			if (read(0, buf, sizeof(buf)) == -1) {
@@ -429,10 +427,9 @@ int TaskMaster::processStarting(long spawnTime, long startTime, ProcInfo& proc)
 {
 	long now = time(NULL);
 	while (now - spawnTime < startTime) {
-		if (g_nbProcessZombies > g_nbZombiesCleaned){
-			spawner_.unSpawnProcess(pbList_);
-			g_nbZombiesCleaned++;
-		}
+		if (g_sigFlag)
+			signalOccured();
+
 		if (proc.getPid() < 0){
 			return 0;
 		}
@@ -447,10 +444,9 @@ void TaskMaster::processStopping(long unSpawnTime, long endTime,
 	long now = time(NULL);
 
 	while (proc.getPid() > 0) {
-		if (g_nbProcessZombies > g_nbZombiesCleaned){
-			spawner_.unSpawnProcess(pbList_);
-			g_nbZombiesCleaned++;
-		}
+		if (g_sigFlag )
+			signalOccured();
+		
 		now = time(NULL);
 
 		if (now - unSpawnTime > endTime) {
@@ -459,3 +455,23 @@ void TaskMaster::processStopping(long unSpawnTime, long endTime,
 	}
 }
 
+void TaskMaster::signalOccured(void)
+{
+	if (g_sigFlag & SCHLD) {
+		spawner_.unSpawnProcess(pbList_);
+		g_sigFlag &= ~SCHLD;
+	}
+	else if (g_sigFlag & SHUP) {
+		std::vector<std::string> tok;
+		tok.push_back("reload");
+		execReload(tok);
+		g_sigFlag &= ~SHUP;
+	}
+	else {
+		for (std::list<ProgramBlock>::iterator it = pbList_.begin();
+			it != pbList_.end(); it++) 
+			spawner_.stopAllProcess(it->getProcInfos(), *it);
+		
+		exit(EXIT_SUCCESS);
+	}
+}

@@ -15,20 +15,35 @@
 
 #include "TaskMaster.hpp"
 
-volatile int g_nbProcessZombies = 0;
-volatile int g_isSigHupReceived = 0;
-int g_nbZombiesCleaned = 0;
+volatile int g_sigFlag = 0;
 
-void recvSigHup(int signal)
+void signalHandler(int signal)
 {
-	if (signal == SIGHUP)
-		g_isSigHupReceived = 1;
+	switch (signal){
+		case SIGCHLD:
+			g_sigFlag |= SCHLD;
+			break;
+		case SIGHUP:
+			g_sigFlag |= SHUP;
+			break;
+		case SIGINT:
+		case SIGQUIT:
+		case SIGKILL:
+		case SIGTERM:
+			g_sigFlag |= SEXIT;
+			break;
+	}
 }
 
-void recvSigChld(int signal)
+void signalsEnabled(void)
 {
-	(void)signal;
-	++g_nbProcessZombies;
+
+	signal(SIGHUP, &signalHandler);
+	signal(SIGCHLD, &signalHandler);
+	signal(SIGINT, &signalHandler);
+	signal(SIGQUIT, &signalHandler);
+	signal(SIGKILL, &signalHandler);
+	signal(SIGTERM, &signalHandler);
 }
 
 int main(int ac, char **av, char **env)
@@ -41,8 +56,8 @@ int main(int ac, char **av, char **env)
 		std::cout << "Usage: taskmaster config-file log-file\n";
 		return 1;
 	}
-	signal(SIGHUP, &recvSigHup);
-	signal(SIGCHLD, &recvSigChld);
+
+	signalsEnabled();
 
 	try {
 		log.init(av[2]);

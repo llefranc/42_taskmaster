@@ -20,6 +20,11 @@
 #include "Spawner.hpp"
 #include "ProgramBlock.hpp"
 
+
+#define SCHLD (1U << 0)
+#define SHUP (1U << 1)
+#define SEXIT (1U << 2)
+
 class TaskMaster
 {
 	private:
@@ -82,7 +87,7 @@ class TaskMaster
 				ProcInfo& proc);
 		void processStopping(long unSpawnTime, long endTime,
 				const ProcInfo &proc);
-
+		void signalOccured(void);
 
 		/* ----------------------------------------------- */
 		/*------------------ ATTRIBUTES ------------------ */

@@ -7,8 +7,9 @@
 #include <sys/wait.h>
 #include <cstdlib>
 
-extern int g_nbZombiesCleaned;
-extern volatile int g_nbProcessZombies;
+extern volatile int g_sigFlag;
+
+#define SCHLD (1U << 0)
 
 
 /* ----------------------------------------------- */
@@ -273,10 +274,10 @@ void Spawner::stopAllProcess(std::vector<ProcInfo>& vec, const ProgramBlock& pb)
 	for (size_t i = 0; i < vec.size(); i++) {
 		if (vec[i].getPid() > 0) {
 			stopProcess(vec[i], pb);
-			while (g_nbProcessZombies == g_nbZombiesCleaned) ;
+			while (! (g_sigFlag & SCHLD)) ;
 			int status;
 			wait(&status);
-			g_nbZombiesCleaned++;
+			g_sigFlag &= ~SCHLD;
 		}
 	}
 }
@@ -322,7 +323,6 @@ void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr,
 		std::cerr << "Son dup2 pipe failed\n";
 		exit(EXIT_SPAWN_FAILED);
 	}
-	// umask(mode); // umask to its initial state
 }
 
 char** Spawner::strVecToCArray(const std::vector<std::string> &vec)
