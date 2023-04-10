@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 15:30:31 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/23 15:34:11 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/10 20:09:45 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,11 +147,18 @@ void Logger::eFile(const std::string &str)
  * This method calls eUser() and eFile(). Refers to this methods for more
  * information.
 */
-
 void Logger::eAll(const std::string &str)
 {
 	eUser(str);
 	eFile(str);
+}
+
+/**
+ * flushFile() - Flush the log file stream buffer.
+*/
+void Logger::flushFile()
+{
+	logStream_ << std::flush;
 }
 
 /**

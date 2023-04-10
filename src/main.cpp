@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:24:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/10 16:56:18 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/10 20:10:16 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,9 +35,8 @@ void signalHandler(int signal)
 	}
 }
 
-void signalsEnabled(void)
+void enableSignals(void)
 {
-
 	signal(SIGHUP, &signalHandler);
 	signal(SIGCHLD, &signalHandler);
 	signal(SIGINT, &signalHandler);
@@ -57,7 +56,7 @@ int main(int ac, char **av, char **env)
 		return 1;
 	}
 
-	signalsEnabled();
+	enableSignals();
 
 	try {
 		log.init(av[2]);
@@ -78,55 +77,5 @@ int main(int ac, char **av, char **env)
 		log.iAll("Taskmaster exited unexpectedly\n");
 		return 1;
 	}
-	log.iAll("Quitting taskmaster\n");
 	return 0;
 }
-
-/**
- * TESTS PROGRAM_BLOCK
-*/
-// #include "ProgramBlock.hpp"
-// #include "ProcInfo.hpp"
-
-// int main(int ac, char **av)
-// {
-// 	(void)ac;
-// 	(void)av;
-
-// 	std::vector<int> vec;
-// 	vec.push_back(2);
-// 	vec.push_back(4);
-// 	vec.push_back(0);
-// 	vec.push_back(100);
-
-// 	std::vector<std::string> vecstr;
-// 	vecstr.push_back("SALUT");
-// 	vecstr.push_back("YOOOOOO");
-// 	vecstr.push_back("HELLOOOOO");
-
-// 	// tester programblock
-// 	ProgramBlock a;
-
-// 	a.print();
-// 	ProcInfo pci("procinfo_name", 3, 22, 43);
-// 	ProcInfo pci2("procinfo_name 2", 3, 22, 43);
-// 	std::vector<ProcInfo> vecpci;
-// 	vecpci.push_back(pci);
-// 	vecpci.push_back(pci2);
-
-// 	a.setProcInfos(vecpci);
-// 	a.setExitCodes(vec);
-// 	a.setEnv(vecstr);
-// 	a.print();
-
-// 	ProgramBlock b(a);
-// 	ProgramBlock c;
-// 	c = a;
-
-// 	b.print();
-// 	c.print();
-// 	a.print();
-// 	a.clear();
-// 	a.print();
-// 	return 0;
-// }

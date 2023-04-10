@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 15:29:18 by llefranc          #+#    #+#             */
-/*   Updated: 2023/02/17 14:22:24 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/10 19:55:35 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,7 @@ class Logger
 		void eUser(const std::string &str);
 		void eFile(const std::string &str);
 		void eAll(const std::string &str);
+		void flushFile();
 		static std::string dateToStr();
 
 

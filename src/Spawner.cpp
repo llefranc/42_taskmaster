@@ -259,15 +259,15 @@ void Spawner::stopProcess(ProcInfo& proc, const ProgramBlock& pb)
 {
 	if (proc.getPid() > 0) {
 		if (kill(proc.getPid(), pb.getStopSignal()) < 0)
-			throw std::runtime_error(std::string("kill failed")
-					+ strerror(errno));
+			throw std::runtime_error(std::string("kill failed ")
+					+ strerror(errno) + "\n");
 	}
 	proc.setState(ProcInfo::E_STATE_STOPPED);
 	proc.setUnSpawnTime(time(NULL));
 }
 
 /**
- * kill a list of processes of ProgramBlock
+ * kill all the processes of a ProgramBlock.
 */
 void Spawner::stopAllProcess(std::vector<ProcInfo>& vec, const ProgramBlock& pb)
 {
@@ -275,9 +275,9 @@ void Spawner::stopAllProcess(std::vector<ProcInfo>& vec, const ProgramBlock& pb)
 		if (vec[i].getPid() > 0) {
 			stopProcess(vec[i], pb);
 			while (! (g_sigFlag & SCHLD)) ;
+			g_sigFlag &= ~SCHLD;
 			int status;
 			wait(&status);
-			g_sigFlag &= ~SCHLD;
 		}
 	}
 }

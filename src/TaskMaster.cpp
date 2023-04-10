@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/10 17:54:37 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/10 20:01:32 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,8 +88,8 @@ void TaskMaster::shellRoutine()
 	while (true)
 	{
 		pollRet = poll(&pfd, 1, 0);
-		if (g_sigFlag ){
-			signalOccured();
+		if (g_sigFlag ) {
+			signalOccured(true);
 		}
 		else if (pollRet & POLLIN) {
 			if (read(0, buf, sizeof(buf)) == -1) {
@@ -98,9 +98,7 @@ void TaskMaster::shellRoutine()
 						+  "\n");
 			}
 			tokens = splitEntry(buf);
-			if (execCmd(tokens) == SHELL_EXIT)
-				break;
-
+			execCmd(tokens);
 			log_->iUser("taskmaster> ");
 			bzero(buf, sizeof(buf));
 		}
@@ -138,7 +136,7 @@ std::vector<std::string> TaskMaster::splitEntry(const std::string line)
 	return v;
 }
 
-int TaskMaster::execCmd(const std::vector<std::string> &tokens)
+void TaskMaster::execCmd(const std::vector<std::string> &tokens)
 {
 	methodPtr m;
 
@@ -152,16 +150,16 @@ int TaskMaster::execCmd(const std::vector<std::string> &tokens)
 		}
 		log_->eUser(tokens[0] + ": unknow command\n");
 	}
-	return SHELL_CONTINUE;
 }
 
-int TaskMaster::execStatus(const std::vector<std::string> &tokens)
+void TaskMaster::execStatus(const std::vector<std::string> &tokens)
 {
 	std::time_t startTime;
 
 	if (tokens.size() > 1) {
 		log_->eUser("Too many arguments\n");
-		goto err;
+		log_->iUser("Usage: status\n");
+		return;
 	}
 	// printPbList(pbList_);
 	for (std::list<ProgramBlock>::iterator it = pbList_.begin();
@@ -172,14 +170,9 @@ int TaskMaster::execStatus(const std::vector<std::string> &tokens)
 			log_->iUser(it->getProcInfos()[i].toString() + "\n");
 		}
 	}
-	return SHELL_CONTINUE;
-
-err:
-	log_->iUser("Usage: status\n");
-	return SHELL_CONTINUE;
 }
 
-int TaskMaster::execStart(const std::vector<std::string> &tokens)
+void TaskMaster::execStart(const std::vector<std::string> &tokens)
 {
 	std::pair<ProgramBlock*, ProcInfo*> infoExec;
 
@@ -208,14 +201,13 @@ int TaskMaster::execStart(const std::vector<std::string> &tokens)
 		else
 			log_->iAll("Process " + tokens[1] + " started\n");
 	}
-	return SHELL_CONTINUE;
+	return;
 
 err:
 	log_->iUser("Usage: start [program_name]\n");
-	return SHELL_CONTINUE;
 }
 
-int TaskMaster::execStop(const std::vector<std::string> &tokens)
+void TaskMaster::execStop(const std::vector<std::string> &tokens)
 {
 	std::pair<ProgramBlock*, ProcInfo*> infoExec;
 
@@ -239,14 +231,13 @@ int TaskMaster::execStop(const std::vector<std::string> &tokens)
 				*infoExec.second);
 		log_->iAll("Process " + tokens[1] + " stopped\n");
 	}
-	return SHELL_CONTINUE;
+	return;
 
 err:
 	log_->iUser("Usage: stop [program_name]\n");
-	return SHELL_CONTINUE;
 }
 
-int TaskMaster::execRestart(const std::vector<std::string> &tokens)
+void TaskMaster::execRestart(const std::vector<std::string> &tokens)
 {
 	if (tokens.size() == 1) {
 		log_->eUser("Missing program name\n");
@@ -257,12 +248,10 @@ int TaskMaster::execRestart(const std::vector<std::string> &tokens)
 	}
 	execStop(tokens);
 	execStart(tokens);
-	return SHELL_CONTINUE;
+	return;
 
 err:
 	log_->iUser("Usage: restart [program_name]\n");
-	return SHELL_CONTINUE;
-
 }
 
 void printPbList(const std::list<ProgramBlock> &pbList)
@@ -330,24 +319,25 @@ void TaskMaster::updatePbList(std::list<ProgramBlock> *newPbList)
  * - Stop and start with new configuration the updated process groups.
  * - Start the added process groups which contain the token "autostart=true".
 */
-int TaskMaster::execReload(const std::vector<std::string> &tokens)
+void TaskMaster::execReload(const std::vector<std::string> &tokens)
 {
 	std::list<ProgramBlock>::iterator it;
 	std::list<ProgramBlock> newPbList;
 
 	if (tokens.size() > 1) {
 		log_->eUser("Too many arguments\n");
-		goto err;
+		log_->iUser("Usage: reload\n");
+		return;
 	}
 	try {
 		newPbList = configParser_.reload();
 	} catch (const std::runtime_error &e) {
 		log_->eUser(e.what());
-		return SHELL_CONTINUE;
+		return;
 	}
 
 	updatePbList(&newPbList);
-	printPbList(newPbList);
+	// printPbList(newPbList); // TODO delete
 	it = newPbList.begin();
 	for (; it != newPbList.end(); it = newPbList.begin()) {
 		if (it->getState() == ProgramBlock::E_STATE_REMOVE) {
@@ -370,35 +360,28 @@ int TaskMaster::execReload(const std::vector<std::string> &tokens)
 			}
 			break;
 		}
-
 	}
 	spawner_.autostart(newPbList);
 	pbList_ = newPbList;
 	execStatus(std::vector<std::string>(1, std::string("status")));
-	return SHELL_CONTINUE;
-
-err:
-	log_->iUser("Usage: reload\n");
-	return SHELL_CONTINUE;
 }
 
-int TaskMaster::execExit(const std::vector<std::string> &tokens)
+void TaskMaster::execExit(const std::vector<std::string> &tokens)
 {
 	std::list<ProgramBlock>::iterator it = pbList_.begin();
 
 	if (tokens.size() > 1) {
 		log_->eUser("Too many arguments\n");
-		goto err;
+		log_->iUser("Usage: exit\n");
+		return;
 	}
 
 	for (; it != pbList_.end(); it++) {
 		spawner_.stopAllProcess(it->getProcInfos(), *it);
 	}
-	return SHELL_EXIT;
-
-err:
-	log_->iUser("Usage: exit\n");
-	return SHELL_CONTINUE;
+	log_->iAll("Quitting taskmaster\n");
+	log_->flushFile();
+	exit(EXIT_SUCCESS);
 }
 
 void TaskMaster::getProgExecutionInfoByName(const std::string& name,
@@ -428,7 +411,7 @@ int TaskMaster::processStarting(long spawnTime, long startTime, ProcInfo& proc)
 	long now = time(NULL);
 	while (now - spawnTime < startTime) {
 		if (g_sigFlag)
-			signalOccured();
+			signalOccured(false);
 
 		if (proc.getPid() < 0){
 			return 0;
@@ -445,33 +428,27 @@ void TaskMaster::processStopping(long unSpawnTime, long endTime,
 
 	while (proc.getPid() > 0) {
 		if (g_sigFlag )
-			signalOccured();
-		
-		now = time(NULL);
+			signalOccured(false);
 
+		now = time(NULL);
 		if (now - unSpawnTime > endTime) {
 			kill(proc.getPid(), SIGKILL);
 		}
 	}
 }
 
-void TaskMaster::signalOccured(void)
+void TaskMaster::signalOccured(bool isReloadPossible)
 {
 	if (g_sigFlag & SCHLD) {
 		spawner_.unSpawnProcess(pbList_);
 		g_sigFlag &= ~SCHLD;
 	}
-	else if (g_sigFlag & SHUP) {
-		std::vector<std::string> tok;
-		tok.push_back("reload");
-		execReload(tok);
+	else if (isReloadPossible && (g_sigFlag & SHUP)) {
+		execReload(std::vector<std::string>(1, std::string("reload")));
 		g_sigFlag &= ~SHUP;
+		log_->iUser("taskmaster> ");
 	}
-	else {
-		for (std::list<ProgramBlock>::iterator it = pbList_.begin();
-			it != pbList_.end(); it++) 
-			spawner_.stopAllProcess(it->getProcInfos(), *it);
-		
-		exit(EXIT_SUCCESS);
+	else if (g_sigFlag & SEXIT) {
+		execExit(std::vector<std::string>(1, std::string("exit")));
 	}
 }
