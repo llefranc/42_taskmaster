@@ -1,7 +1,7 @@
 #include "Spawner.hpp"
 
 #include <fcntl.h>
-#include <string.h>
+#include <cstring>
 #include <ctime>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -84,23 +84,27 @@ void Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
 		logger_->eUser("Process PID not found\n");
 		return ;
 	}
+	std::cout << "status=" << WEXITSTATUS(status) << std::endl;
 	proc->setExitCode(WEXITSTATUS(status));
 
 	if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
-		long now = time(NULL);
-		if (now - proc->getSpawnTime() < pb->getStartTime()) {
+		std::time_t now = time(NULL);
+		if (proc->getExitCode() == EXIT_SPAWN_FAILED) {
+			proc->setState(ProcInfo::E_STATE_FATAL);
+		}
+		else if ((now - proc->getSpawnTime()) < pb->getStartTime()) {
 			if (pb->getAutoRestart() == ProgramBlock::E_AUTO_FALSE)
 				proc->setState(ProcInfo::E_STATE_FATAL);
 			else
 				proc->setState(ProcInfo::E_STATE_BACKOFF);
-
 		}
 		else if (pb->getAutoRestart() == ProgramBlock::E_AUTO_FALSE ||
 		       (pb->getAutoRestart() == ProgramBlock::E_AUTO_UNEXP &&
 		       pb->getExitCodes().find(status) != pb->getExitCodes().end())) {
 			proc->setState(ProcInfo::E_STATE_EXITED);
 		}
-		if (pb->getAutoRestart() == ProgramBlock::E_AUTO_TRUE) {
+		if (proc->getState() != ProcInfo::E_STATE_FATAL &&
+		    pb->getAutoRestart() == ProgramBlock::E_AUTO_TRUE) {
 			if (proc->getNbRestart() < pb->getStartRetries())
 				return this->startProcess(*proc, *pb);
 			proc->setState(ProcInfo::E_STATE_FATAL);
@@ -269,13 +273,14 @@ void Spawner::stopAllProcess(std::vector<ProcInfo>& vec, const ProgramBlock& pb)
 	}
 }
 
-void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr, const ProgramBlock& prg)
+void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr,
+		const ProgramBlock& prg)
 {
 	int pipefd[2];
-	mode_t mode = umask(prg.getUmask());
 	std::string outFile = prg.getLogOut();
 	std::string errFile = prg.getLogErr();
 
+	umask(prg.getUmask());
 	if (outFile.empty())
 		outFile = "/tmp/" + pInfo.getName() + "_" + pInfo.getHash() + "_stdout.txt";
 	if (errFile.empty())
