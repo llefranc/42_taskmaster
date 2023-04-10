@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:17:16 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/06 18:23:33 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/10 15:06:23 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,8 +35,8 @@ ProgramBlock::ProgramBlock() :
 	exitCodes_(),
 	stopSignal_(SIGTERM),
 	stopTime_(0),
-	logOut_("/tmp"),
-	logErr_("/tmp"),
+	logOut_(),
+	logErr_(),
 	env_()
 {
 	exitCodes_.insert(0);
@@ -321,8 +321,8 @@ void ProgramBlock::clear()
 	exitCodes_.clear();
 	exitCodes_.insert(0);
 	stopSignal_ = SIGTERM;
-	logOut_ = "/tmp";
-	logErr_ = "/tmp";
+	logOut_ = "";
+	logErr_ = "";
 	env_.clear();
 }
 
@@ -390,6 +390,7 @@ ProcInfo *ProgramBlock::getProcInfoByName(const std::string &name)
 	}
 	return NULL;
 }
+
 
 /* ----------------------------------------------- */
 /* ------- NON-MEMBER FUNCTION OVERLOADS --------- */

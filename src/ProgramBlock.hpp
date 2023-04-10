@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 14:54:11 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/06 18:23:33 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/10 13:33:28 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,7 +94,6 @@ class ProgramBlock
 		ProcInfo *getProcInfoByName(const std::string &name);
 
 
-
 		/* ----------------------------------------------- */
 		/* ------------------- SETTERS ------------------- */
 
@@ -157,8 +156,8 @@ class ProgramBlock
 		std::set<int> exitCodes_;	// default: std::set(1, 0)
 		int stopSignal_;		// default: SIGTERM
 		int stopTime_;			// default: 0
-		std::string logOut_;		// default: "/tmp"
-		std::string logErr_;		// default: "/tmp"
+		std::string logOut_;		// default: ""
+		std::string logErr_;		// default: ""
 		std::vector<std::string> env_;	// default: std::vector()
 };
 

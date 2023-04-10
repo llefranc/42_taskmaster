@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/06 18:24:34 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/10 13:44:56 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -310,6 +310,7 @@ void TaskMaster::updatePbList(std::list<ProgramBlock> *newPbList)
 			newPbList->insert(remPos, *oldPb);
 		} else if (*match == *oldPb) {
 			match->setState(ProgramBlock::E_STATE_UNCHANGE);
+			match->setProcInfos(oldPb->getProcInfos());
 		} else {
 			oldPb->setState(ProgramBlock::E_STATE_CHANGE_REMOVE);
 			newPbList->insert(changRemPos, *oldPb);
@@ -352,7 +353,6 @@ int TaskMaster::execReload(const std::vector<std::string> &tokens)
 	it = newPbList.begin();
 	for (; it != newPbList.end(); it = newPbList.begin()) {
 		if (it->getState() == ProgramBlock::E_STATE_REMOVE) {
-
 			spawner_.stopAllProcess(it->getProcInfos(), *it);
 			log_->iUser(it->getName() + ": stopped\n");
 			log_->iUser(it->getName() + ": removed process group\n");

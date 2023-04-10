@@ -271,43 +271,45 @@ void Spawner::stopAllProcess(std::vector<ProcInfo>& vec, const ProgramBlock& pb)
 
 void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr, const ProgramBlock& prg)
 {
+	int pipefd[2];
 	mode_t mode = umask(prg.getUmask());
-	std::string outFile = pInfo.getName() + "_" + pInfo.getHash() + "_stdout.txt";
-	std::string errFile = pInfo.getName() + "_" + pInfo.getHash() + "_stderr.txt";
-	std::string outPath(prg.getLogOut() + "/" + outFile);
-	std::string errPath(prg.getLogErr() + "/" + errFile);
+	std::string outFile = prg.getLogOut();
+	std::string errFile = prg.getLogErr();
 
-	if ((fd = open(outPath.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0) {
+	if (outFile.empty())
+		outFile = "/tmp/" + pInfo.getName() + "_" + pInfo.getHash() + "_stdout.txt";
+	if (errFile.empty())
+		errFile = "/tmp/" + pInfo.getName() + "_" + pInfo.getHash() + "_stderr.txt";
+
+	if ((fd = open(outFile.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0) {
 		std::cerr << "Son open stdout failed\n";
-		exit(EXIT_FAILURE);
+		exit(EXIT_SPAWN_FAILED);
 	}
-	if ((fderr = open(errPath.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0) {
+	if ((fderr = open(errFile.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0) {
 		std::cerr << "Son open stderr failed\n";
-		exit(EXIT_FAILURE);
+		exit(EXIT_SPAWN_FAILED);
 	}
 
 	// redirection out and err into log files
 	if (dup2(fd, STDOUT_FILENO) < 0) {
 		std::cerr << "Son dup2 stdout failed\n";
-		exit(EXIT_FAILURE);
+		exit(EXIT_SPAWN_FAILED);
 	}
 	if (dup2(fderr, STDERR_FILENO) < 0) {
 		std::cerr << "Son dup2 stderr failed\n";
-		exit(EXIT_FAILURE);
+		exit(EXIT_SPAWN_FAILED);
 	}
 
-	int pipefd[2];
 	if (pipe(pipefd) == -1) {
 		std::cerr << "Son pipe failed\n";
-		exit(EXIT_FAILURE);
+		exit(EXIT_SPAWN_FAILED);
 	}
 	// To avoid unexpected exit for program using stdin like /bin/cat
 	if (dup2(pipefd[0], STDIN_FILENO) < 0) {
 		std::cerr << "Son dup2 pipe failed\n";
-		exit(EXIT_FAILURE);
+		exit(EXIT_SPAWN_FAILED);
 	}
-
-	umask(mode); // umask to its initial state
+	// umask(mode); // umask to its initial state
 }
 
 char** Spawner::strVecToCArray(const std::vector<std::string> &vec)

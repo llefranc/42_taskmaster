@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/17 17:05:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/06 18:29:20 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/10 14:48:43 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,8 @@
 
 #include <unordered_map>
 #include <sstream>
+#include <cstdlib>
+#include <ctime>
 
 #define STATUS_PADDING_LEN 40
 
@@ -52,9 +54,11 @@ ProcInfo::ProcInfo(const std::string &name) :
 	exitCode_(0)
 {
 	std::stringstream stream;
-	std::hash<std::string> hasher;
-	size_t hashNb = hasher(name);
+	std::hash<int> hasher;
+	size_t hashNb;
 
+	srand(time(NULL));
+	hashNb = hasher(rand());
 	stream << std::hex << hashNb;
 	hash_ = stream.str();
 }
