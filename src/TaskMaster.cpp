@@ -13,10 +13,7 @@
 #include "TaskMaster.hpp"
 
 #include <poll.h>
-#include <unistd.h>
-#include <string>
 #include <string.h>
-#include <ctime>
 #include <csignal>
 
 extern volatile int g_sigFlag;
@@ -66,7 +63,7 @@ void TaskMaster::initConfigParser(const std::string &path)
 	// for (std::list<ProgramBlock>::iterator it = pbList_.begin();
 	//     it != pbList_.end(); ++it) {
 	// 	it->print();
-	// }
+	// } // TODO REMOVE
 }
 
 /**
@@ -76,7 +73,7 @@ void TaskMaster::initConfigParser(const std::string &path)
 void TaskMaster::shellRoutine()
 {
 	int pollRet;
-	char buf[256] = {};
+	std::string buf;
 	std::vector<std::string> tokens;
 	struct pollfd pfd = {.fd = 0, .events = POLLIN, .revents = 0};
 
@@ -92,17 +89,13 @@ void TaskMaster::shellRoutine()
 			signalOccured();
 		}
 		else if (pollRet & POLLIN) {
-			if (read(0, buf, sizeof(buf)) == -1) {
-				throw std::runtime_error("Read failed: "
-						+ std::string(strerror(errno))
-						+  "\n");
-			}
-			tokens = splitEntry(buf);
+			getline(std::cin, buf);
+			tokens = splitEntry(buf.c_str());
 			if (execCmd(tokens) == SHELL_EXIT)
 				break;
 
 			log_->iUser("taskmaster> ");
-			bzero(buf, sizeof(buf));
+			buf.clear();
 		}
 		else if (pollRet & (POLLERR | POLLNVAL)) {
 			throw std::runtime_error(std::string("Poll failed: ")
@@ -444,7 +437,7 @@ void TaskMaster::processStopping(long unSpawnTime, long endTime,
 	long now = time(NULL);
 
 	while (proc.getPid() > 0) {
-		if (g_sigFlag )
+		if (g_sigFlag)
 			signalOccured();
 		
 		now = time(NULL);
