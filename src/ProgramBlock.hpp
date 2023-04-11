@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 14:54:11 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/10 13:33:28 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/11 15:00:24 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,6 +120,7 @@ class ProgramBlock
 		/* ------------------- METHODS ------------------- */
 
 		bool isCorrect() const;
+		bool isRestartNeeded(int status) const;
 		void clear();
 		void print() const;
 

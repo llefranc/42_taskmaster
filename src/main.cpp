@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:24:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/10 20:10:16 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/11 15:58:51 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,6 @@ void signalHandler(int signal)
 			break;
 		case SIGINT:
 		case SIGQUIT:
-		case SIGKILL:
 		case SIGTERM:
 			g_sigFlag |= SEXIT;
 			break;
@@ -41,7 +40,6 @@ void enableSignals(void)
 	signal(SIGCHLD, &signalHandler);
 	signal(SIGINT, &signalHandler);
 	signal(SIGQUIT, &signalHandler);
-	signal(SIGKILL, &signalHandler);
 	signal(SIGTERM, &signalHandler);
 }
 
@@ -55,7 +53,6 @@ int main(int ac, char **av, char **env)
 		std::cout << "Usage: taskmaster config-file log-file\n";
 		return 1;
 	}
-
 	enableSignals();
 
 	try {

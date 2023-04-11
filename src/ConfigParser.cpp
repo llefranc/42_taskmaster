@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/05 10:33:03 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/11 12:37:17 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -516,10 +516,10 @@ void ConfigParser::parseStopSignal(ProgramBlock *pb, const std::string &token,
 		{1, "HUP"},
 		{2, "INT"},
 		{3, "QUIT"},
-		{4, "TERM"},
 		{9, "KILL"},
-		{30, "USR1"},
-		{31, "USR2"}
+		{10, "USR1"},
+		{12, "USR2"},
+		{15, "TERM"}
 	};
 
 	for (size_t i = 0; i < sizeof(p) / sizeof(*p); ++i) {
@@ -528,8 +528,8 @@ void ConfigParser::parseStopSignal(ProgramBlock *pb, const std::string &token,
 			return ;
 		}
 	}
-	throw std::runtime_error(token + ": must be HUP|INT|QUIT|TERM|"
-			"KILL|USR1|USR2 " + lNbStr());
+	throw std::runtime_error(token + ": must be HUP|INT|QUIT|KILL|"
+			"USR1|USR2|TERM " + lNbStr());
 }
 
 /**

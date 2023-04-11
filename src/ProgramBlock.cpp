@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:17:16 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/10 15:06:23 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/11 15:04:27 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -300,6 +300,19 @@ void ProgramBlock::setEnv(const std::vector<std::string>& env)
 bool ProgramBlock::isCorrect() const
 {
 	return name_.length() && cmd_.length();
+}
+
+/**
+ * Indicate if a status code from an exited process of the program block should
+ * lead to a restart or not.
+*/
+bool ProgramBlock::isRestartNeeded(int status) const
+{
+	if (getAutoRestart() == ProgramBlock::E_AUTO_TRUE ||
+	    (getAutoRestart() == ProgramBlock::E_AUTO_UNEXP &&
+	    getExitCodes().find(status) == getExitCodes().end()))
+		return true;
+	return false;
 }
 
 /**

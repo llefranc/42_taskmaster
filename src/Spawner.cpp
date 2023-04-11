@@ -63,70 +63,6 @@ void Spawner::autostart(std::list<ProgramBlock>& pbList)
 }
 
 /**
- * Wait on any child process that has exited and find the right ProcInfo.
- * Clean and update status of process.
- *
- * Return: 1 if there was a children process to unspawn, 0 if there was no
- * 	   unwaited children, -1 if the child process PID was not found in
- * 	   ProgramBlock list.
-*/
-int Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList)
-{
-	int status = -1;
-	int pidChild;
-	ProcInfo *proc = NULL;
-	ProgramBlock *pb = NULL;
-
-	if ((pidChild = waitpid(-1, &status, WNOHANG)) <= 0)
-		return 0;
-	for (std::list<ProgramBlock>::iterator it = pbList.begin();
-	      it != pbList.end(); it++) {
-		proc = it->getProcInfoByPid(pidChild);
-		if (proc) {
-			pb = &(*it);
-			break;
-		}
-	}
-	if (proc == NULL || pb == NULL) {
-		logger_->eUser("Process PID not found\n");
-		return -1;
-	}
-	proc->setExitCode(WEXITSTATUS(status));
-
-	if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
-		std::time_t now = time(NULL);
-		if (proc->getExitCode() == EXIT_SPAWN_FAILED) {
-			proc->setState(ProcInfo::E_STATE_FATAL);
-		}
-		else if ((now - proc->getSpawnTime()) < pb->getStartTime()) {
-			if (pb->getAutoRestart() == ProgramBlock::E_AUTO_FALSE)
-				proc->setState(ProcInfo::E_STATE_FATAL);
-			else
-				proc->setState(ProcInfo::E_STATE_BACKOFF);
-		}
-		else if (pb->getAutoRestart() == ProgramBlock::E_AUTO_FALSE ||
-		       (pb->getAutoRestart() == ProgramBlock::E_AUTO_UNEXP &&
-		       pb->getExitCodes().find(status) != pb->getExitCodes().end())) {
-			proc->setState(ProcInfo::E_STATE_EXITED);
-		}
-		if (proc->getState() != ProcInfo::E_STATE_FATAL &&
-		    pb->getAutoRestart() == ProgramBlock::E_AUTO_TRUE) {
-			if (proc->getNbRestart() < pb->getStartRetries()) {
-				startProcess(*proc, *pb);
-				return 1;
-			}
-			proc->setState(ProcInfo::E_STATE_FATAL);
-		}
-	}
-	else {
-		proc->setNbRestart(0);
-	}
-	proc->setPid(-1);
-	proc->setUnSpawnTime(time(NULL));
-	return 1;
-}
-
-/**
  * Fill a buffer with a copy of the command, removing escape characters and
  * replacing enclosing quotes with -1 to identify them.
 */
@@ -204,6 +140,92 @@ std::vector<std::string> Spawner::splitCmdArgs(const std::string& cmd)
 }
 
 /**
+ * Setup stdin/stdout outputs for child process.
+*/
+void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr,
+		const ProgramBlock& prg)
+{
+	int pipefd[2];
+	std::string outFile = prg.getLogOut();
+	std::string errFile = prg.getLogErr();
+
+	umask(prg.getUmask());
+	if (outFile.empty())
+		outFile = "/tmp/" + pInfo.getName() + "_" + pInfo.getHash() + "_stdout.txt";
+	if (errFile.empty())
+		errFile = "/tmp/" + pInfo.getName() + "_" + pInfo.getHash() + "_stderr.txt";
+
+	if ((fd = open(outFile.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0) {
+		std::cerr << "Son open stdout failed\n";
+		exit(EXIT_SPAWN_FAILED);
+	}
+	if ((fderr = open(errFile.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0) {
+		std::cerr << "Son open stderr failed\n";
+		exit(EXIT_SPAWN_FAILED);
+	}
+
+	// redirection out and err into log files
+	if (dup2(fd, STDOUT_FILENO) < 0) {
+		std::cerr << "Son dup2 stdout failed\n";
+		exit(EXIT_SPAWN_FAILED);
+	}
+	if (dup2(fderr, STDERR_FILENO) < 0) {
+		std::cerr << "Son dup2 stderr failed\n";
+		exit(EXIT_SPAWN_FAILED);
+	}
+
+	if (pipe(pipefd) == -1) {
+		std::cerr << "Son pipe failed\n";
+		exit(EXIT_SPAWN_FAILED);
+	}
+	// To avoid unexpected exit for program using stdin like /bin/cat
+	if (dup2(pipefd[0], STDIN_FILENO) < 0) {
+		std::cerr << "Son dup2 pipe failed\n";
+		exit(EXIT_SPAWN_FAILED);
+	}
+}
+
+/**
+ * Transform a vector of strings into a double char array.
+*/
+char** Spawner::strVecToCArray(const std::vector<std::string> &vec)
+{
+	static char **array;
+	int size = vec.size();
+
+	if ((array = (char**)malloc(sizeof(char*) * (size + 1))) == NULL)
+		return NULL;
+
+	bzero(array, sizeof(*array));
+	for (int i = 0; i < size; i++)
+	{
+		if ((array[i] = strdup(vec[i].c_str())) == NULL)
+			return NULL;
+	}
+	array[size] = NULL;
+	return array;
+}
+
+/**
+ * Free the args allocated for execve.
+*/
+void Spawner::freeExecveArg(char** av, char** env)
+{
+	int i = 0;
+
+	while (av[i])
+		free(av[i++]);
+	free(av[i]); /* for NULL ptr */
+	free(av);
+
+	i = 0;
+	while (env[i])
+		free(env[i++]);
+	free(env[i]); /* for NULL ptr */
+	free(env);
+}
+
+/**
  * Start and update state of process.
 */
 void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
@@ -255,106 +277,77 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 	}
 }
 
-void Spawner::stopProcess(ProcInfo& proc, const ProgramBlock& pb)
+/**
+ * Wait on any child process that has exited and find the right ProcInfo.
+ * Clean and update status of process.
+ * @isRestartOn: Indicate if a restart is possible after the unspawn of the
+ * 		 process.
+ *
+ * Return: Child process pid if there was one to unspawn, 0 if there was no
+ * 	   unwaited child, -1 if the child process PID was not found in
+ * 	   ProgramBlock list.
+*/
+int Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList, bool isRestartOn)
 {
-	if (proc.getPid() > 0) {
-		if (kill(proc.getPid(), pb.getStopSignal()) < 0)
+	int status = -1;
+	int pidChild;
+	ProcInfo *proc = NULL;
+	ProgramBlock *pb = NULL;
+
+	if ((pidChild = waitpid(-1, &status, WNOHANG)) <= 0)
+		return 0;
+	for (std::list<ProgramBlock>::iterator it = pbList.begin();
+	      it != pbList.end(); it++) {
+		proc = it->getProcInfoByPid(pidChild);
+		if (proc) {
+			pb = &(*it);
+			break;
+		}
+	}
+	if (proc == NULL || pb == NULL) {
+		logger_->eUser("Process PID not found\n");
+		return -1;
+	}
+	proc->setExitCode(WEXITSTATUS(status));
+
+	std::time_t now = time(NULL);
+	if (proc->getExitCode() == EXIT_SPAWN_FAILED) {
+		proc->setState(ProcInfo::E_STATE_FATAL);
+	}
+	else if ((now - proc->getSpawnTime()) < pb->getStartTime()) {
+		if (isRestartOn && proc->getNbRestart() < pb->getStartRetries()) {
+			proc->setState(ProcInfo::E_STATE_BACKOFF);
+			startProcess(*proc, *pb);
+			return pidChild;
+		}
+		proc->setState(ProcInfo::E_STATE_FATAL);
+	}
+	else if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
+		proc->setState(ProcInfo::E_STATE_EXITED);
+
+		if (isRestartOn && pb->isRestartNeeded(WEXITSTATUS(status))) {
+			proc->setNbRestart(0);
+			startProcess(*proc, *pb);
+			return pidChild;
+		}
+	}
+	proc->setNbRestart(0);
+	proc->setPid(-1);
+	proc->setUnSpawnTime(time(NULL));
+	return pidChild;
+}
+
+
+/**
+ * Stop a child process with the signal defined in configuration file.
+*/
+void Spawner::stopProcess(ProcInfo *proc, const ProgramBlock& pb)
+{
+	if (proc->getPid() > 0) {
+		if (kill(proc->getPid(), pb.getStopSignal()) < 0)
 			throw std::runtime_error(std::string("kill failed ")
 					+ strerror(errno) + "\n");
 	}
-	proc.setState(ProcInfo::E_STATE_STOPPED);
-	proc.setUnSpawnTime(time(NULL));
-}
-
-/**
- * kill all the processes of a ProgramBlock.
-*/
-void Spawner::stopAllProcess(std::vector<ProcInfo>& vec, const ProgramBlock& pb)
-{
-	for (size_t i = 0; i < vec.size(); i++) {
-		if (vec[i].getPid() > 0) {
-			stopProcess(vec[i], pb);
-			while (! (g_sigFlag & SCHLD)) ;
-			g_sigFlag &= ~SCHLD;
-			int status;
-			wait(&status);
-		}
-	}
-}
-
-void Spawner::fileProcHandler(const ProcInfo& pInfo, int& fd, int& fderr,
-		const ProgramBlock& prg)
-{
-	int pipefd[2];
-	std::string outFile = prg.getLogOut();
-	std::string errFile = prg.getLogErr();
-
-	umask(prg.getUmask());
-	if (outFile.empty())
-		outFile = "/tmp/" + pInfo.getName() + "_" + pInfo.getHash() + "_stdout.txt";
-	if (errFile.empty())
-		errFile = "/tmp/" + pInfo.getName() + "_" + pInfo.getHash() + "_stderr.txt";
-
-	if ((fd = open(outFile.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0) {
-		std::cerr << "Son open stdout failed\n";
-		exit(EXIT_SPAWN_FAILED);
-	}
-	if ((fderr = open(errFile.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0777)) < 0) {
-		std::cerr << "Son open stderr failed\n";
-		exit(EXIT_SPAWN_FAILED);
-	}
-
-	// redirection out and err into log files
-	if (dup2(fd, STDOUT_FILENO) < 0) {
-		std::cerr << "Son dup2 stdout failed\n";
-		exit(EXIT_SPAWN_FAILED);
-	}
-	if (dup2(fderr, STDERR_FILENO) < 0) {
-		std::cerr << "Son dup2 stderr failed\n";
-		exit(EXIT_SPAWN_FAILED);
-	}
-
-	if (pipe(pipefd) == -1) {
-		std::cerr << "Son pipe failed\n";
-		exit(EXIT_SPAWN_FAILED);
-	}
-	// To avoid unexpected exit for program using stdin like /bin/cat
-	if (dup2(pipefd[0], STDIN_FILENO) < 0) {
-		std::cerr << "Son dup2 pipe failed\n";
-		exit(EXIT_SPAWN_FAILED);
-	}
-}
-
-char** Spawner::strVecToCArray(const std::vector<std::string> &vec)
-{
-	static char **array;
-	int size = vec.size();
-
-	if ((array = (char**)malloc(sizeof(char*) * (size + 1))) == NULL)
-		return NULL;
-
-	bzero(array, sizeof(*array));
-	for (int i = 0; i < size; i++)
-	{
-		if ((array[i] = strdup(vec[i].c_str())) == NULL)
-			return NULL;
-	}
-	array[size] = NULL;
-	return array;
-}
-
-void Spawner::freeExecveArg(char** av, char** env)
-{
-	int i = 0;
-
-	while (av[i])
-		free(av[i++]);
-	free(av[i]); /* for NULL ptr */
-	free(av);
-
-	i = 0;
-	while (env[i])
-		free(env[i++]);
-	free(env[i]); /* for NULL ptr */
-	free(env);
+	proc->setState(ProcInfo::E_STATE_STOPPED);
+	proc->setUnSpawnTime(time(NULL));
 }

@@ -6,18 +6,24 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/10 20:01:32 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/11 16:28:09 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "TaskMaster.hpp"
 
+#include <algorithm>
 #include <poll.h>
-#include <unistd.h>
-#include <string>
-#include <string.h>
-#include <ctime>
+#include <cstring>
 #include <csignal>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#define RELOAD_ON true
+#define RELOAD_OFF false
+
+#define RESTART_ON true
+#define RESTART_OFF false
 
 extern volatile int g_sigFlag;
 
@@ -66,7 +72,7 @@ void TaskMaster::initConfigParser(const std::string &path)
 	// for (std::list<ProgramBlock>::iterator it = pbList_.begin();
 	//     it != pbList_.end(); ++it) {
 	// 	it->print();
-	// }
+	// } // TODO REMOVE
 }
 
 /**
@@ -76,7 +82,7 @@ void TaskMaster::initConfigParser(const std::string &path)
 void TaskMaster::shellRoutine()
 {
 	int pollRet;
-	char buf[256] = {};
+	std::string buf;
 	std::vector<std::string> tokens;
 	struct pollfd pfd = {.fd = 0, .events = POLLIN, .revents = 0};
 
@@ -89,18 +95,14 @@ void TaskMaster::shellRoutine()
 	{
 		pollRet = poll(&pfd, 1, 0);
 		if (g_sigFlag ) {
-			signalOccured(true);
+			signalOccured(RELOAD_ON, RESTART_ON);
 		}
 		else if (pollRet & POLLIN) {
-			if (read(0, buf, sizeof(buf)) == -1) {
-				throw std::runtime_error("Read failed: "
-						+ std::string(strerror(errno))
-						+  "\n");
-			}
-			tokens = splitEntry(buf);
+			getline(std::cin, buf);
+			tokens = splitEntry(buf.c_str());
 			execCmd(tokens);
 			log_->iUser("taskmaster> ");
-			bzero(buf, sizeof(buf));
+			buf.clear();
 		}
 		else if (pollRet & (POLLERR | POLLNVAL)) {
 			throw std::runtime_error(std::string("Poll failed: ")
@@ -193,13 +195,12 @@ void TaskMaster::execStart(const std::vector<std::string> &tokens)
 	} else {
 		spawner_.startProcess(*infoExec.second, *infoExec.first);
 
-		int started = processStarting(infoExec.second->getSpawnTime(),
-		                              infoExec.first->getStartTime(),
-					      *infoExec.second);
-		if (!started)
+		if (waitProcStart(infoExec.second->getSpawnTime(),
+		    infoExec.first->getStartTime(), *infoExec.second) == -1) {
 			log_->iUser("Start " + tokens[1] + " failed\n");
-		else
+		} else {
 			log_->iAll("Process " + tokens[1] + " started\n");
+		}
 	}
 	return;
 
@@ -225,10 +226,10 @@ void TaskMaster::execStop(const std::vector<std::string> &tokens)
 	} else if (!infoExec.second->isRunning()) {
 		log_->eUser("Process " + tokens[1] + " is not running\n");
 	} else {
-		spawner_.stopProcess(*infoExec.second, *infoExec.first);
-		processStopping(infoExec.second->getUnSpawnTime(),
+		spawner_.stopProcess(infoExec.second, *infoExec.first);
+		waitProcStop(infoExec.second->getUnSpawnTime(),
 				infoExec.first->getStopTime(),
-				*infoExec.second);
+				*infoExec.second, RESTART_ON);
 		log_->iAll("Process " + tokens[1] + " stopped\n");
 	}
 	return;
@@ -254,6 +255,7 @@ err:
 	log_->iUser("Usage: restart [program_name]\n");
 }
 
+// TODO: delete
 void printPbList(const std::list<ProgramBlock> &pbList)
 {
 	for (std::list<ProgramBlock>::const_iterator it = pbList.begin();
@@ -341,13 +343,13 @@ void TaskMaster::execReload(const std::vector<std::string> &tokens)
 	it = newPbList.begin();
 	for (; it != newPbList.end(); it = newPbList.begin()) {
 		if (it->getState() == ProgramBlock::E_STATE_REMOVE) {
-			spawner_.stopAllProcess(it->getProcInfos(), *it);
+			pbStopAllProcsNoRestart(it->getProcInfos(), *it);
 			log_->iUser(it->getName() + ": stopped\n");
 			log_->iUser(it->getName() + ": removed process group\n");
 			newPbList.remove(*it);
 		}
 		else if (it->getState() == ProgramBlock::E_STATE_CHANGE_REMOVE) {
-			spawner_.stopAllProcess(it->getProcInfos(), *it);
+			pbStopAllProcsNoRestart(it->getProcInfos(), *it);
 			log_->iUser(it->getName() + ": stopped\n");
 			log_->iUser(it->getName() + ": updated process group\n");
 			newPbList.remove(*it);
@@ -355,7 +357,8 @@ void TaskMaster::execReload(const std::vector<std::string> &tokens)
 		else {
 			while (it != newPbList.end()) {
 				if (it->getState() == ProgramBlock::E_STATE_NEW)
-					log_->iUser(it->getName() + ": added process group\n");
+					log_->iUser(it->getName() + ": added "
+						    "process group\n");
 				it++;
 			}
 			break;
@@ -376,8 +379,10 @@ void TaskMaster::execExit(const std::vector<std::string> &tokens)
 		return;
 	}
 
+	log_->iAll("Stopping all processes...\n");
 	for (; it != pbList_.end(); it++) {
-		spawner_.stopAllProcess(it->getProcInfos(), *it);
+		pbStopAllProcsNoRestart(it->getProcInfos(), *it);
+		log_->iAll(it->getName() + ": stopped\n");
 	}
 	log_->iAll("Quitting taskmaster\n");
 	log_->flushFile();
@@ -406,49 +411,109 @@ void TaskMaster::getProgExecutionInfoByName(const std::string& name,
 	}
 }
 
-int TaskMaster::processStarting(long spawnTime, long startTime, ProcInfo& proc)
+/**
+ * Wait until the process is successfully started.
+*/
+int TaskMaster::waitProcStart(long spawnTime, long startTime,
+			      const ProcInfo& proc)
 {
 	long now = time(NULL);
+	int pidSaved = proc.getPid();
+	std::vector<int> pidsUnspawned;
+
 	while (now - spawnTime < startTime) {
 		if (g_sigFlag)
-			signalOccured(false);
+			pidsUnspawned = signalOccured(RELOAD_OFF, RESTART_ON);
 
-		if (proc.getPid() < 0){
+		if (std::find(pidsUnspawned.begin(), pidsUnspawned.end(),
+		    pidSaved) != pidsUnspawned.end())
+			return -1;
+
+		now = time(NULL);
+	}
+	return 0;
+}
+
+/**
+ * Wait until the process is successfully stopped.
+*/
+int TaskMaster::waitProcStop(long unSpawnTime, long endTime,
+			     const ProcInfo &proc, bool isRestartOn)
+{
+	long now = time(NULL);
+	int pidSaved = proc.getPid();
+	std::vector<int> pidsUnspawned;
+
+	while (now - unSpawnTime < endTime) {
+		if (g_sigFlag)
+			pidsUnspawned = signalOccured(RELOAD_OFF, isRestartOn);
+
+		if (std::find(pidsUnspawned.begin(), pidsUnspawned.end(),
+		    pidSaved) != pidsUnspawned.end()) {
 			return 0;
 		}
 		now = time(NULL);
 	}
-	return 1;
+
+	std::cout << "sending kill signal\n"; // TODO
+	if (kill(proc.getPid(), SIGKILL) == -1)
+		throw std::runtime_error(std::string("kill failed ")
+				+ strerror(errno) + "\n");
+	return -1;
 }
 
-void TaskMaster::processStopping(long unSpawnTime, long endTime,
-				 const ProcInfo &proc)
+/**
+ * Handle the different signals, which can lead to 3 actions: unspawn one or
+ * several child processes, trigger a configuration reload or exit taskmaster.
+ * @isReloadOn: Indicate when a SIGHUP signal is received if the reload
+ * 		can be executed in the actual program flow or should be
+ * 		executed later.
+ * @isRestartOn: Indicate when unspawning children processes after SIGCHLD
+ * 		 signal if the autorestart/startretries parameters from config
+ * 		 file can trigger or not.
+*/
+std::vector<pid_t> TaskMaster::signalOccured(bool isReloadOn, bool isRestartOn)
 {
-	long now = time(NULL);
+	static bool isExiting = false;
+	pid_t newPid;
+	std::vector<pid_t> vec;
 
-	while (proc.getPid() > 0) {
-		if (g_sigFlag )
-			signalOccured(false);
-
-		now = time(NULL);
-		if (now - unSpawnTime > endTime) {
-			kill(proc.getPid(), SIGKILL);
+	if (g_sigFlag & SCHLD) {
+		g_sigFlag &= ~SCHLD;
+		while ((newPid = spawner_.unSpawnProcess(pbList_, isRestartOn))
+		       > 0) {
+			vec.push_back(newPid);
 		}
 	}
-}
-
-void TaskMaster::signalOccured(bool isReloadPossible)
-{
-	if (g_sigFlag & SCHLD) {
-		spawner_.unSpawnProcess(pbList_);
-		g_sigFlag &= ~SCHLD;
-	}
-	else if (isReloadPossible && (g_sigFlag & SHUP)) {
+	else if (isReloadOn && (g_sigFlag & SHUP)) {
 		execReload(std::vector<std::string>(1, std::string("reload")));
 		g_sigFlag &= ~SHUP;
 		log_->iUser("taskmaster> ");
 	}
-	else if (g_sigFlag & SEXIT) {
+	else if (!isExiting && (g_sigFlag & SEXIT)) {
+		isExiting = true;
 		execExit(std::vector<std::string>(1, std::string("exit")));
+	}
+	return vec;
+}
+
+/**
+ * Stop all the processes in a ProgramBlock with no restart possibility.
+*/
+void TaskMaster::pbStopAllProcsNoRestart(std::vector<ProcInfo>& vec,
+					 const ProgramBlock& pb)
+{
+	for (size_t i = 0; i < vec.size(); i++) {
+		if (vec[i].getPid() <= 0)
+			continue;
+
+		spawner_.stopProcess(&(vec[i]), pb);
+
+		/* If forced to kill a child, wait for its SIGCHLD signal */
+		if (waitProcStop(vec[i].getUnSpawnTime(), pb.getStopTime(),
+		    vec[i], RESTART_OFF) == -1) {
+			while (!(g_sigFlag & SCHLD));
+			signalOccured(RELOAD_OFF, RESTART_OFF);
+		}
 	}
 }
