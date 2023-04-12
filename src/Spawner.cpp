@@ -230,6 +230,7 @@ void Spawner::freeExecveArg(char** av, char** env)
 */
 void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 {
+	int fd, fderr;
 	std::vector<std::string> vecArgs;
 	pid_t pid;
 
@@ -248,7 +249,6 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 			exit(EXIT_SPAWN_FAILED);
 		}
 
-		int fd, fderr;
 		// open process log files for stdout and stderr + pipe stdin
 		fileProcHandler(pInfo, fd, fderr, prg);
 
@@ -269,8 +269,6 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 		pInfo.setUnSpawnTime(0);
 		pInfo.setState(ProcInfo::E_STATE_STARTING);
 		pInfo.setPid(pid);
-		int nbRes = pInfo.getNbRestart();
-		pInfo.setNbRestart(++nbRes);
 	} else {
 		throw std::runtime_error(std::string("Fork failed:") +
 				strerror(errno) + "\n");
@@ -278,8 +276,42 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 }
 
 /**
+ * Restart an exited process if needed (depending on configuration file
+ * parameters).
+*/
+int Spawner::restartExitedProcess(ProcInfo *proc, ProgramBlock *pb,
+				  bool isRestartOn)
+{
+	int exitCode;
+	std::time_t now = time(NULL);
+
+	if ((now - proc->getSpawnTime()) < pb->getStartTime()) {
+		if (isRestartOn && proc->getNbRestart() <
+			pb->getStartRetries()) {
+			proc->setState(ProcInfo::E_STATE_BACKOFF);
+			proc->setNbRestart(proc->getNbRestart() + 1);
+			startProcess(*proc, *pb);
+			return 1;
+		}
+		proc->setState(ProcInfo::E_STATE_FATAL);
+	}
+	else if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
+		proc->setState(ProcInfo::E_STATE_EXITED);
+
+		exitCode = proc->getExitCode();
+		if (isRestartOn && pb->shouldAutoRestart(exitCode)) {
+			proc->setNbRestart(0);
+			startProcess(*proc, *pb);
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/**
  * Wait on any child process that has exited and find the right ProcInfo.
- * Clean and update status of process.
+ * Clean and update status of process. Restart processes if needed (depending on
+ * configuration file parameters).
  * @isRestartOn: Indicate if a restart is possible after the unspawn of the
  * 		 process.
  *
@@ -287,7 +319,7 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
  * 	   unwaited child, -1 if the child process PID was not found in
  * 	   ProgramBlock list.
 */
-int Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList, bool isRestartOn)
+int Spawner::cleanProcess(std::list<ProgramBlock>& pbList, bool isRestartOn)
 {
 	int status = -1;
 	int pidChild;
@@ -297,7 +329,7 @@ int Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList, bool isRestartOn)
 	if ((pidChild = waitpid(-1, &status, WNOHANG)) <= 0)
 		return 0;
 	for (std::list<ProgramBlock>::iterator it = pbList.begin();
-	      it != pbList.end(); it++) {
+	     it != pbList.end(); it++) {
 		proc = it->getProcInfoByPid(pidChild);
 		if (proc) {
 			pb = &(*it);
@@ -305,29 +337,16 @@ int Spawner::unSpawnProcess(std::list<ProgramBlock>& pbList, bool isRestartOn)
 		}
 	}
 	if (proc == NULL || pb == NULL) {
-		logger_->eUser("Process PID not found\n");
+		logger_->eUser("process PID not found\n");
 		return -1;
 	}
 	proc->setExitCode(WEXITSTATUS(status));
 
-	std::time_t now = time(NULL);
-	if (proc->getExitCode() == EXIT_SPAWN_FAILED) {
-		proc->setState(ProcInfo::E_STATE_FATAL);
-	}
-	else if ((now - proc->getSpawnTime()) < pb->getStartTime()) {
-		if (isRestartOn && proc->getNbRestart() < pb->getStartRetries()) {
-			proc->setState(ProcInfo::E_STATE_BACKOFF);
-			startProcess(*proc, *pb);
-			return pidChild;
+	if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
+		if (proc->getExitCode() == EXIT_SPAWN_FAILED) {
+			proc->setState(ProcInfo::E_STATE_FATAL);
 		}
-		proc->setState(ProcInfo::E_STATE_FATAL);
-	}
-	else if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
-		proc->setState(ProcInfo::E_STATE_EXITED);
-
-		if (isRestartOn && pb->isRestartNeeded(WEXITSTATUS(status))) {
-			proc->setNbRestart(0);
-			startProcess(*proc, *pb);
+		else if (restartExitedProcess(proc, pb, isRestartOn)) {
 			return pidChild;
 		}
 	}

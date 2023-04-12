@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:22 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/11 16:27:52 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/12 10:19:08 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,11 +83,12 @@ class TaskMaster
 		void execReload(const std::vector<std::string> &tokens);
 		void execExit(const std::vector<std::string> &tokens);
 
-		void pbStopAllProcsNoRestart(std::vector<ProcInfo>& vec, const ProgramBlock& pb);
+		void stopAllPbProcsNoRestart(std::vector<ProcInfo>& vec,
+					     const ProgramBlock& pb);
 		int waitProcStart(long spawnTime, long startTime,
 				  const ProcInfo& proc);
 		int waitProcStop(long unSpawnTime, long endTime,
-				 const ProcInfo &proc, bool isRestartOn);
+				 const ProcInfo &proc);
 		std::vector<pid_t> signalOccured(bool isReloadOn,
 						 bool isRestartOn);
 

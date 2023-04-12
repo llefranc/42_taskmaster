@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 14:54:11 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/11 15:00:24 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/11 17:07:38 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,7 +120,7 @@ class ProgramBlock
 		/* ------------------- METHODS ------------------- */
 
 		bool isCorrect() const;
-		bool isRestartNeeded(int status) const;
+		bool shouldAutoRestart(int status) const;
 		void clear();
 		void print() const;
 
@@ -156,7 +156,7 @@ class ProgramBlock
 		int startTime_;			// default: 0
 		std::set<int> exitCodes_;	// default: std::set(1, 0)
 		int stopSignal_;		// default: SIGTERM
-		int stopTime_;			// default: 0
+		int stopTime_;			// default: 1
 		std::string logOut_;		// default: ""
 		std::string logErr_;		// default: ""
 		std::vector<std::string> env_;	// default: std::vector()

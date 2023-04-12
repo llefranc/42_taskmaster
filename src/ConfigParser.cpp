@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/11 12:37:17 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/12 13:04:16 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -506,14 +506,13 @@ void ConfigParser::parseExitCodes(ProgramBlock *pb, const std::string &token,
 
 /**
  * Parse argument of token "starttime" which must be:
- * - HUP|INT|QUIT|TERM|KILL|USR1|USR2.
+ * - INT|QUIT|TERM|KILL|USR1|USR2.
 */
 void ConfigParser::parseStopSignal(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
 	// std::cout << "Parsing " << token << "\n";
-	static const std::pair<int, std::string> p[7] = {
-		{1, "HUP"},
+	static const std::pair<int, std::string> p[6] = {
 		{2, "INT"},
 		{3, "QUIT"},
 		{9, "KILL"},
@@ -528,8 +527,8 @@ void ConfigParser::parseStopSignal(ProgramBlock *pb, const std::string &token,
 			return ;
 		}
 	}
-	throw std::runtime_error(token + ": must be HUP|INT|QUIT|KILL|"
-			"USR1|USR2|TERM " + lNbStr());
+	throw std::runtime_error(token + ": must be INT|QUIT|KILL|USR1|USR2"
+			"|TERM " + lNbStr());
 }
 
 /**

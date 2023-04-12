@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 15:17:16 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/11 15:04:27 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/12 13:04:49 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ ProgramBlock::ProgramBlock() :
 	startTime_(0),
 	exitCodes_(),
 	stopSignal_(SIGTERM),
-	stopTime_(0),
+	stopTime_(1),
 	logOut_(),
 	logErr_(),
 	env_()
@@ -306,7 +306,7 @@ bool ProgramBlock::isCorrect() const
  * Indicate if a status code from an exited process of the program block should
  * lead to a restart or not.
 */
-bool ProgramBlock::isRestartNeeded(int status) const
+bool ProgramBlock::shouldAutoRestart(int status) const
 {
 	if (getAutoRestart() == ProgramBlock::E_AUTO_TRUE ||
 	    (getAutoRestart() == ProgramBlock::E_AUTO_UNEXP &&
@@ -334,6 +334,7 @@ void ProgramBlock::clear()
 	exitCodes_.clear();
 	exitCodes_.insert(0);
 	stopSignal_ = SIGTERM;
+	stopTime_ = 1;
 	logOut_ = "";
 	logErr_ = "";
 	env_.clear();
@@ -358,7 +359,7 @@ void ProgramBlock::print() const
 	// 		it != procInfos_.end(); ++it, ++i) {
 	// 	std::cout << "procInfo[" << i << "]=" << it->toString() << "\n";
 	// }
-	std::cout << "name_=" << name_ << std::endl;
+	// std::cout << "name_=" << name_ << std::endl;
 	// std::cout << "cmd_=" << cmd_ << std::endl;
 	// std::cout << "numProcs_=" << numProcs_ << std::endl;
 	// std::cout << "umask_=" << std::oct << umask_ << std::dec << std::endl;
@@ -375,6 +376,7 @@ void ProgramBlock::print() const
 	// }
 
 	// std::cout << "stopSignal_=" << stopSignal_ << std::endl;
+	// std::cout << "stopTime_=" << stopTime_ << std::endl;
 	// std::cout << "logOut_=" << logOut_ << std::endl;
 	// std::cout << "logErr_=" << logErr_ << std::endl;
 
@@ -445,6 +447,7 @@ void swap(ProgramBlock &a, ProgramBlock &b)
 	std::swap(a.startTime_, b.startTime_);
 	std::swap(a.exitCodes_, b.exitCodes_);
 	std::swap(a.stopSignal_, b.stopSignal_);
+	std::swap(a.stopTime_, b.stopTime_);
 	std::swap(a.logOut_, b.logOut_);
 	std::swap(a.logErr_, b.logErr_);
 	std::swap(a.env_, b.env_);

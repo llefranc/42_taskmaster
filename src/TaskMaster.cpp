@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/11 16:28:09 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/12 13:12:23 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -159,7 +159,7 @@ void TaskMaster::execStatus(const std::vector<std::string> &tokens)
 	std::time_t startTime;
 
 	if (tokens.size() > 1) {
-		log_->eUser("Too many arguments\n");
+		log_->eUser("too many arguments\n");
 		log_->iUser("Usage: status\n");
 		return;
 	}
@@ -179,25 +179,24 @@ void TaskMaster::execStart(const std::vector<std::string> &tokens)
 	std::pair<ProgramBlock*, ProcInfo*> infoExec;
 
 	if (tokens.size() == 1) {
-		log_->eUser("Missing program name\n");
+		log_->eUser("missing process name\n");
 		goto err;
 	} else if (tokens.size() > 2) {
-		log_->eUser("Too many arguments\n");
+		log_->eUser("too many arguments\n");
 		goto err;
 	}
-
 	getProgExecutionInfoByName(tokens[1], infoExec);
 
 	if (infoExec.second == NULL) {
-		log_->eAll("Process name not found\n");
+		log_->eUser(tokens[1] + ": no such process\n");
 	} else if (infoExec.second->isRunning()) {
-		log_->eUser("Process " + tokens[1] + " is alreading running\n");
+		log_->eUser(tokens[1] + ": process is already running\n");
 	} else {
 		spawner_.startProcess(*infoExec.second, *infoExec.first);
 
 		if (waitProcStart(infoExec.second->getSpawnTime(),
 		    infoExec.first->getStartTime(), *infoExec.second) == -1) {
-			log_->iUser("Start " + tokens[1] + " failed\n");
+			log_->eUser(tokens[1] + ": start failed\n");
 		} else {
 			log_->iAll("Process " + tokens[1] + " started\n");
 		}
@@ -205,7 +204,7 @@ void TaskMaster::execStart(const std::vector<std::string> &tokens)
 	return;
 
 err:
-	log_->iUser("Usage: start [program_name]\n");
+	log_->iUser("Usage: start [process_name]\n");
 }
 
 void TaskMaster::execStop(const std::vector<std::string> &tokens)
@@ -213,46 +212,54 @@ void TaskMaster::execStop(const std::vector<std::string> &tokens)
 	std::pair<ProgramBlock*, ProcInfo*> infoExec;
 
 	if (tokens.size() == 1) {
-		log_->eUser("Missing program name\n");
+		log_->eUser("missing process name\n");
 		goto err;
 	} else if (tokens.size() > 2) {
-		log_->eUser("Too many arguments\n");
+		log_->eUser("too many arguments\n");
 		goto err;
 	}
 	getProgExecutionInfoByName(tokens[1], infoExec);
 
 	if (infoExec.second == NULL) {
-		log_->eUser("Process name not found\n");
+		log_->eUser(tokens[1] + ": no such process\n");
 	} else if (!infoExec.second->isRunning()) {
-		log_->eUser("Process " + tokens[1] + " is not running\n");
+		log_->eUser(tokens[1] + ": process is not running\n");
 	} else {
 		spawner_.stopProcess(infoExec.second, *infoExec.first);
 		waitProcStop(infoExec.second->getUnSpawnTime(),
 				infoExec.first->getStopTime(),
-				*infoExec.second, RESTART_ON);
+				*infoExec.second);
 		log_->iAll("Process " + tokens[1] + " stopped\n");
 	}
 	return;
 
 err:
-	log_->iUser("Usage: stop [program_name]\n");
+	log_->iUser("Usage: stop [process_name]\n");
 }
 
 void TaskMaster::execRestart(const std::vector<std::string> &tokens)
 {
+	std::pair<ProgramBlock*, ProcInfo*> infoExec;
+
 	if (tokens.size() == 1) {
-		log_->eUser("Missing program name\n");
+		log_->eUser("missing process name\n");
 		goto err;
 	} else if (tokens.size() > 2) {
-		log_->eUser("Too many arguments\n");
+		log_->eUser("too many arguments\n");
 		goto err;
 	}
-	execStop(tokens);
-	execStart(tokens);
+	getProgExecutionInfoByName(tokens[1], infoExec);
+
+	if (infoExec.second == NULL) {
+		log_->eUser(tokens[1] + ": no such process\n");
+	} else {
+		execStop(tokens);
+		execStart(tokens);
+	}
 	return;
 
 err:
-	log_->iUser("Usage: restart [program_name]\n");
+	log_->iUser("Usage: restart [process_name]\n");
 }
 
 // TODO: delete
@@ -327,7 +334,7 @@ void TaskMaster::execReload(const std::vector<std::string> &tokens)
 	std::list<ProgramBlock> newPbList;
 
 	if (tokens.size() > 1) {
-		log_->eUser("Too many arguments\n");
+		log_->eUser("too many arguments\n");
 		log_->iUser("Usage: reload\n");
 		return;
 	}
@@ -343,13 +350,13 @@ void TaskMaster::execReload(const std::vector<std::string> &tokens)
 	it = newPbList.begin();
 	for (; it != newPbList.end(); it = newPbList.begin()) {
 		if (it->getState() == ProgramBlock::E_STATE_REMOVE) {
-			pbStopAllProcsNoRestart(it->getProcInfos(), *it);
+			stopAllPbProcsNoRestart(it->getProcInfos(), *it);
 			log_->iUser(it->getName() + ": stopped\n");
 			log_->iUser(it->getName() + ": removed process group\n");
 			newPbList.remove(*it);
 		}
 		else if (it->getState() == ProgramBlock::E_STATE_CHANGE_REMOVE) {
-			pbStopAllProcsNoRestart(it->getProcInfos(), *it);
+			stopAllPbProcsNoRestart(it->getProcInfos(), *it);
 			log_->iUser(it->getName() + ": stopped\n");
 			log_->iUser(it->getName() + ": updated process group\n");
 			newPbList.remove(*it);
@@ -374,14 +381,14 @@ void TaskMaster::execExit(const std::vector<std::string> &tokens)
 	std::list<ProgramBlock>::iterator it = pbList_.begin();
 
 	if (tokens.size() > 1) {
-		log_->eUser("Too many arguments\n");
+		log_->eUser("too many arguments\n");
 		log_->iUser("Usage: exit\n");
 		return;
 	}
 
 	log_->iAll("Stopping all processes...\n");
 	for (; it != pbList_.end(); it++) {
-		pbStopAllProcsNoRestart(it->getProcInfos(), *it);
+		stopAllPbProcsNoRestart(it->getProcInfos(), *it);
 		log_->iAll(it->getName() + ": stopped\n");
 	}
 	log_->iAll("Quitting taskmaster\n");
@@ -438,7 +445,7 @@ int TaskMaster::waitProcStart(long spawnTime, long startTime,
  * Wait until the process is successfully stopped.
 */
 int TaskMaster::waitProcStop(long unSpawnTime, long endTime,
-			     const ProcInfo &proc, bool isRestartOn)
+			     const ProcInfo &proc)
 {
 	long now = time(NULL);
 	int pidSaved = proc.getPid();
@@ -446,7 +453,7 @@ int TaskMaster::waitProcStop(long unSpawnTime, long endTime,
 
 	while (now - unSpawnTime < endTime) {
 		if (g_sigFlag)
-			pidsUnspawned = signalOccured(RELOAD_OFF, isRestartOn);
+			pidsUnspawned = signalOccured(RELOAD_OFF, RESTART_OFF);
 
 		if (std::find(pidsUnspawned.begin(), pidsUnspawned.end(),
 		    pidSaved) != pidsUnspawned.end()) {
@@ -455,10 +462,20 @@ int TaskMaster::waitProcStop(long unSpawnTime, long endTime,
 		now = time(NULL);
 	}
 
-	std::cout << "sending kill signal\n"; // TODO
+	std::cout << "sending kill signal\n"; // TODO remove
 	if (kill(proc.getPid(), SIGKILL) == -1)
 		throw std::runtime_error(std::string("kill failed ")
 				+ strerror(errno) + "\n");
+	while (1) {
+		while (!(g_sigFlag & SCHLD));
+		pidsUnspawned = signalOccured(RELOAD_OFF, RESTART_ON);
+
+		if (std::find(pidsUnspawned.begin(), pidsUnspawned.end(),
+		    pidSaved) != pidsUnspawned.end()) {
+			std::cout << "killed the good pid\n"; // TODO remove
+			break;
+		}
+	}
 	return -1;
 }
 
@@ -480,7 +497,7 @@ std::vector<pid_t> TaskMaster::signalOccured(bool isReloadOn, bool isRestartOn)
 
 	if (g_sigFlag & SCHLD) {
 		g_sigFlag &= ~SCHLD;
-		while ((newPid = spawner_.unSpawnProcess(pbList_, isRestartOn))
+		while ((newPid = spawner_.cleanProcess(pbList_, isRestartOn))
 		       > 0) {
 			vec.push_back(newPid);
 		}
@@ -500,7 +517,7 @@ std::vector<pid_t> TaskMaster::signalOccured(bool isReloadOn, bool isRestartOn)
 /**
  * Stop all the processes in a ProgramBlock with no restart possibility.
 */
-void TaskMaster::pbStopAllProcsNoRestart(std::vector<ProcInfo>& vec,
+void TaskMaster::stopAllPbProcsNoRestart(std::vector<ProcInfo>& vec,
 					 const ProgramBlock& pb)
 {
 	for (size_t i = 0; i < vec.size(); i++) {
@@ -508,12 +525,6 @@ void TaskMaster::pbStopAllProcsNoRestart(std::vector<ProcInfo>& vec,
 			continue;
 
 		spawner_.stopProcess(&(vec[i]), pb);
-
-		/* If forced to kill a child, wait for its SIGCHLD signal */
-		if (waitProcStop(vec[i].getUnSpawnTime(), pb.getStopTime(),
-		    vec[i], RESTART_OFF) == -1) {
-			while (!(g_sigFlag & SCHLD));
-			signalOccured(RELOAD_OFF, RESTART_OFF);
-		}
+		waitProcStop(vec[i].getUnSpawnTime(), pb.getStopTime(), vec[i]);
 	}
 }

@@ -28,9 +28,12 @@ class Spawner
 		void startProgramBlock(ProgramBlock&);
 		void autostart(std::list<ProgramBlock>&);
 		void startProcess(ProcInfo&, const ProgramBlock&);
+		int restartExitedProcess(ProcInfo *proc, ProgramBlock *pb,
+					 bool isRestartOn);
 		void stopProcess(ProcInfo *proc, const ProgramBlock &pb);
-		int unSpawnProcess(std::list<ProgramBlock>& pbList,
+		int cleanProcess(std::list<ProgramBlock>& pbList,
 				   bool isRestartOn);
+
 
 	private:
 
