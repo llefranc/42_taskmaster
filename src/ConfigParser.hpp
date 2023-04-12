@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:32 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/06 14:07:14 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/12 16:21:17 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,14 @@
 #include <map>
 
 #include "ProgramBlock.hpp"
+
+#define CP_MAX_LINE_LEN 1024
+#define CP_MAX_NAME_LEN 20
+#define CP_MAX_NUMPROCS 100
+#define CP_MAX_STARTRETRIES 100
+#define CP_MAX_STARTTIME 86400
+#define CP_MAX_STOPTIME 86400
+#define CP_MAX_EXITCODE 255
 
 class ConfigParser
 {

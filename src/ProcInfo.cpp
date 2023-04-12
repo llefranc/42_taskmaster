@@ -6,18 +6,18 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/17 17:05:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/12 15:00:14 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/12 16:52:59 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ProcInfo.hpp"
 
+#include "ConfigParser.hpp"
+
 #include <unordered_map>
 #include <sstream>
 #include <cstdlib>
 #include <ctime>
-
-#define STATUS_PADDING_LEN 40
 
 #define DAYS_DIVIDER 86400
 #define HOURS_DIVIDER 3600
@@ -32,6 +32,12 @@ static const std::string stateStr[7] = {
 	"EXITED",
 	"FATAL",
 };
+
+/* ex: programname_21, 21 corresponds to numprocs */
+#define PROGRAM_NAME_MAX_LEN (CP_MAX_NAME_LEN + sizeof(":_xxx") + 10)
+
+#define STATE_STR_MAX_LEN (sizeof("STARTING"))
+#define STATUS_PADDING_LEN (PROGRAM_NAME_MAX_LEN + STATE_STR_MAX_LEN)
 
 static inline std::string timeToStr(int time);
 static inline std::string runningStateToStr(pid_t pid, std::time_t startTime);
@@ -285,7 +291,7 @@ unspawntime=heure du stop.
 */
 std::string ProcInfo::toStrStatus() const
 {
-	std::string str(30, ' ');
+	std::string str(PROGRAM_NAME_MAX_LEN, ' ');
 	char buf[sizeof("mon dd hh:mm AM")] = {};
 
 	for (size_t i = 0; i < name_.length() && i < str.length() - 1; ++i)

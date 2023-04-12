@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/12 13:04:16 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/12 17:03:53 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,14 +20,6 @@
 #include <algorithm>
 #include <ctype.h>
 #include <iostream>
-
-#define MAX_LINE_LEN 1024
-#define MAX_NAME_LEN 20
-#define MAX_NUMPROCS 100
-#define MAX_STARTRETRIES 100
-#define MAX_STARTTIME 86400
-#define MAX_STOPTIME 86400
-#define MAX_EXITCODE 255
 
 static inline std::string lNbStr();
 static inline std::string &revWsTrim(std::string &s);
@@ -230,10 +222,10 @@ void ConfigParser::parseProgramName(const std::list<ProgramBlock> &pbList,
 	name = line.substr(1, line.size() - 2);
 
 	/* +1 for '\0' charac */
-	if (name.empty() || name.size() > MAX_NAME_LEN + 1) {
+	if (name.empty() || name.size() > CP_MAX_NAME_LEN + 1) {
 		throw std::runtime_error("Program name: between 1 and "
-				+ std::to_string(MAX_NAME_LEN) + " characters "
-				"- e.g. [1-20 characs] " + lNbStr());
+				+ std::to_string(CP_MAX_NAME_LEN) + " characters"
+				" - e.g. [1-20 characs] " + lNbStr());
 	}
 	while (i < name.size()) {
 		if (!isalnum(name[i])) {
@@ -290,16 +282,16 @@ void ConfigParser::parseToken(ProgramBlock *pb, const std::string &line)
 
 /**
  * Parse argument of token "cmd" which must be:
- * - Less than MAX_LINE_LEN characters.
+ * - Less than CP_MAX_LINE_LEN characters.
 */
 void ConfigParser::parseCmd(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
 	// std::cout << "Parsing " << token << "\n";
-	if (param.size() > MAX_LINE_LEN) {
+	if (param.size() > CP_MAX_LINE_LEN) {
 		throw std::runtime_error(token + ": line too long, max "
-				+ std::to_string(MAX_LINE_LEN) + " characters "
-				+ lNbStr());
+				+ std::to_string(CP_MAX_LINE_LEN)
+				+ " characters " + lNbStr());
 	}
 	pb->setCmd(param);
 }
@@ -307,7 +299,7 @@ void ConfigParser::parseCmd(ProgramBlock *pb, const std::string &token,
 /**
  * Parse argument of token "numprocs" which must be:
  * - Only digit characters.
- * - With a value between 1 and MAX_NUMPROCS.
+ * - With a value between 1 and CP_MAX_NUMPROCS.
 */
 void ConfigParser::parseNumProcs(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
@@ -325,9 +317,9 @@ void ConfigParser::parseNumProcs(ProgramBlock *pb, const std::string &token,
 	} catch (const std::out_of_range &e) {
 		outOfRange = true;
 	}
-	if (outOfRange || val > MAX_NUMPROCS || val < 1) {
+	if (outOfRange || val > CP_MAX_NUMPROCS || val < 1) {
 		throw std::runtime_error(token + ": value must be between 1 "
-				"and " + std::to_string(MAX_NUMPROCS)
+				"and " + std::to_string(CP_MAX_NUMPROCS)
 				+ " " + lNbStr());
 	}
 	pb->setNumProcs(val);
@@ -354,17 +346,17 @@ void ConfigParser::parseUmask(ProgramBlock *pb, const std::string &token,
 
 /**
  * Parse argument of token "workingdir" which must be:
- * - Less than MAX_LINE_LEN characters.
+ * - Less than CP_MAX_LINE_LEN characters.
 */
 void ConfigParser::parseWorkingDir(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
 	// std::cout << "Parsing " << token << "\n";
 
-	if (param.size() > MAX_LINE_LEN) {
+	if (param.size() > CP_MAX_LINE_LEN) {
 		throw std::runtime_error(token + ": line too long, max "
-				+ std::to_string(MAX_LINE_LEN) + " characters "
-				+ lNbStr());
+				+ std::to_string(CP_MAX_LINE_LEN)
+				+ " characters " + lNbStr());
 	}
 	pb->setWorkDir(param);
 }
@@ -430,9 +422,9 @@ void ConfigParser::parseStartRetries(ProgramBlock *pb, const std::string &token,
 	} catch (const std::out_of_range  &e) {
 		outOfRange = true;
 	}
-	if (outOfRange || val > MAX_STARTRETRIES) {
+	if (outOfRange || val > CP_MAX_STARTRETRIES) {
 		throw std::runtime_error(token + ": must be between 0 and "
-				+ std::to_string(MAX_STARTRETRIES)
+				+ std::to_string(CP_MAX_STARTRETRIES)
 				+ " " + lNbStr());
 	}
 	pb->setStartRetries(val);
@@ -441,7 +433,7 @@ void ConfigParser::parseStartRetries(ProgramBlock *pb, const std::string &token,
 /**
  * Parse argument of token "starttime" which must be:
  * - Only digit characters.
- * - With a value between 0 and MAX_STARTTIME.
+ * - With a value between 0 and CP_MAX_STARTTIME.
 */
 void ConfigParser::parseStartTime(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
@@ -459,9 +451,9 @@ void ConfigParser::parseStartTime(ProgramBlock *pb, const std::string &token,
 	} catch (const std::out_of_range &e) {
 		outOfRange = true;
 	}
-	if (outOfRange || val > MAX_STARTTIME) {
+	if (outOfRange || val > CP_MAX_STARTTIME) {
 		throw std::runtime_error(token + ": must be between 0 "
-				"and " + std::to_string(MAX_STARTTIME)
+				"and " + std::to_string(CP_MAX_STARTTIME)
 				+ " seconds " + lNbStr());
 	}
 	pb->setStartTime(val);
@@ -493,7 +485,7 @@ void ConfigParser::parseExitCodes(ProgramBlock *pb, const std::string &token,
 			err = true;
 		}
 
-		if (err || nb > MAX_EXITCODE) {
+		if (err || nb > CP_MAX_EXITCODE) {
 			throw std::runtime_error(token + ": must be numbers "
 					"between 0 and 255 separated by ',' "
 					"character " + lNbStr());
@@ -534,7 +526,7 @@ void ConfigParser::parseStopSignal(ProgramBlock *pb, const std::string &token,
 /**
  * Parse argument of token "stoptime" which must be:
  * - Only digit characters.
- * - With a value between 0 and MAX_STOPTIME.
+ * - With a value between 0 and CP_MAX_STOPTIME.
 */
 void ConfigParser::parseStopTime(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
@@ -552,9 +544,9 @@ void ConfigParser::parseStopTime(ProgramBlock *pb, const std::string &token,
 	} catch (const std::out_of_range &e) {
 		outOfRange = true;
 	}
-	if (outOfRange || val > MAX_STOPTIME) {
+	if (outOfRange || val > CP_MAX_STOPTIME) {
 		throw std::runtime_error(token + ": must be between 0 "
-				"and " + std::to_string(MAX_STOPTIME)
+				"and " + std::to_string(CP_MAX_STOPTIME)
 				+ " seconds " + lNbStr());
 	}
 	pb->setStopTime(val);
@@ -562,32 +554,32 @@ void ConfigParser::parseStopTime(ProgramBlock *pb, const std::string &token,
 
 /**
  * Parse argument of token "stdout" which must be:
- * - Less than MAX_LINE_LEN characters.
+ * - Less than CP_MAX_LINE_LEN characters.
 */
 void ConfigParser::parseStdout(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
 	// std::cout << "Parsing " << token << "\n";
-	if (param.size() > MAX_LINE_LEN) {
+	if (param.size() > CP_MAX_LINE_LEN) {
 		throw std::runtime_error(token + ": line too long, max "
-				+ std::to_string(MAX_LINE_LEN) + " characters "
-				+ lNbStr());
+				+ std::to_string(CP_MAX_LINE_LEN)
+				+ " characters " + lNbStr());
 	}
 	pb->setLogOut(param);
 }
 
 /**
  * Parse argument of token "stderr" which must be:
- * - Less than MAX_LINE_LEN characters.
+ * - Less than CP_MAX_LINE_LEN characters.
 */
 void ConfigParser::parseStderr(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
 	// std::cout << "Parsing " << token << "\n";
-	if (param.size() > MAX_LINE_LEN) {
+	if (param.size() > CP_MAX_LINE_LEN) {
 		throw std::runtime_error(token + ": line too long, max "
-				+ std::to_string(MAX_LINE_LEN) + " characters "
-				+ lNbStr());
+				+ std::to_string(CP_MAX_LINE_LEN)
+				+ " characters " + lNbStr());
 	}
 	pb->setLogErr(param);
 }
@@ -668,9 +660,15 @@ void ConfigParser::generateProcInfos(std::list<ProgramBlock> *pbList)
 	for (std::list<ProgramBlock>::iterator it = pbList->begin();
 	    it != pbList->end(); ++it) {
 		vPis.clear();
-		for (int i = 0; i < it->getNumprocs(); ++i) {
-			ProcInfo pi(it->getName() + + "_" + std::to_string(i));
+		if (it->getNumprocs() == 1) {
+			ProcInfo pi(it->getName());
 			vPis.push_back(pi);
+		} else {
+			for (int i = 0; i < it->getNumprocs(); ++i) {
+				ProcInfo pi(it->getName() + "_"
+					    + std::to_string(i));
+				vPis.push_back(pi);
+			}
 		}
 		it->setProcInfos(vPis);
 	}
