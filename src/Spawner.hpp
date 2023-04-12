@@ -29,7 +29,7 @@ class Spawner
 		void autostart(std::list<ProgramBlock>&);
 		void startProcess(ProcInfo&, const ProgramBlock&);
 		int restartExitedProcess(ProcInfo *proc, ProgramBlock *pb,
-					 bool isRestartOn);
+					 bool isRestartOn, int exitPid);
 		void stopProcess(ProcInfo *proc, const ProgramBlock &pb);
 		int cleanProcess(std::list<ProgramBlock>& pbList,
 				   bool isRestartOn);

@@ -269,6 +269,7 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
 		pInfo.setUnSpawnTime(0);
 		pInfo.setState(ProcInfo::E_STATE_STARTING);
 		pInfo.setPid(pid);
+		logger_->iFile(pInfo.toStrLog(pid));
 	} else {
 		throw std::runtime_error(std::string("Fork failed:") +
 				strerror(errno) + "\n");
@@ -280,7 +281,7 @@ void Spawner::startProcess(ProcInfo& pInfo, const ProgramBlock& prg)
  * parameters).
 */
 int Spawner::restartExitedProcess(ProcInfo *proc, ProgramBlock *pb,
-				  bool isRestartOn)
+				  bool isRestartOn, int exitPid)
 {
 	int exitCode;
 	std::time_t now = time(NULL);
@@ -288,8 +289,11 @@ int Spawner::restartExitedProcess(ProcInfo *proc, ProgramBlock *pb,
 	if ((now - proc->getSpawnTime()) < pb->getStartTime()) {
 		if (isRestartOn && proc->getNbRestart() <
 			pb->getStartRetries()) {
+
 			proc->setState(ProcInfo::E_STATE_BACKOFF);
 			proc->setNbRestart(proc->getNbRestart() + 1);
+			logger_->iFile(proc->toStrLog(exitPid));
+
 			startProcess(*proc, *pb);
 			return 1;
 		}
@@ -300,7 +304,10 @@ int Spawner::restartExitedProcess(ProcInfo *proc, ProgramBlock *pb,
 
 		exitCode = proc->getExitCode();
 		if (isRestartOn && pb->shouldAutoRestart(exitCode)) {
+
 			proc->setNbRestart(0);
+			logger_->iFile(proc->toStrLog(exitPid));
+
 			startProcess(*proc, *pb);
 			return 1;
 		}
@@ -322,15 +329,15 @@ int Spawner::restartExitedProcess(ProcInfo *proc, ProgramBlock *pb,
 int Spawner::cleanProcess(std::list<ProgramBlock>& pbList, bool isRestartOn)
 {
 	int status = -1;
-	int pidChild;
+	int exitPid;
 	ProcInfo *proc = NULL;
 	ProgramBlock *pb = NULL;
 
-	if ((pidChild = waitpid(-1, &status, WNOHANG)) <= 0)
+	if ((exitPid = waitpid(-1, &status, WNOHANG)) <= 0)
 		return 0;
 	for (std::list<ProgramBlock>::iterator it = pbList.begin();
 	     it != pbList.end(); it++) {
-		proc = it->getProcInfoByPid(pidChild);
+		proc = it->getProcInfoByPid(exitPid);
 		if (proc) {
 			pb = &(*it);
 			break;
@@ -341,19 +348,19 @@ int Spawner::cleanProcess(std::list<ProgramBlock>& pbList, bool isRestartOn)
 		return -1;
 	}
 	proc->setExitCode(WEXITSTATUS(status));
-
 	if (proc->getState() != ProcInfo::E_STATE_STOPPED) {
 		if (proc->getExitCode() == EXIT_SPAWN_FAILED) {
 			proc->setState(ProcInfo::E_STATE_FATAL);
 		}
-		else if (restartExitedProcess(proc, pb, isRestartOn)) {
-			return pidChild;
+		else if (restartExitedProcess(proc, pb, isRestartOn, exitPid)) {
+			return exitPid;
 		}
 	}
 	proc->setNbRestart(0);
 	proc->setPid(-1);
 	proc->setUnSpawnTime(time(NULL));
-	return pidChild;
+	logger_->iFile(proc->toStrLog(exitPid));
+	return exitPid;
 }
 
 

@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/17 17:05:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/10 14:48:43 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/12 15:00:14 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,16 @@
 #define DAYS_DIVIDER 86400
 #define HOURS_DIVIDER 3600
 #define MINUTES_DIVIDER 60
+
+static const std::string stateStr[7] = {
+	"STOPPED",
+	"STARTING",
+	"RUNNING",
+	"BACKOFF",
+	"STOPPING",
+	"EXITED",
+	"FATAL",
+};
 
 static inline std::string timeToStr(int time);
 static inline std::string runningStateToStr(pid_t pid, std::time_t startTime);
@@ -273,17 +283,8 @@ unspawntime=heure du stop.
  * program_name             STOPPED    Not started
  * program_name             STOPPED    Feb 23 05:26 PM
 */
-std::string ProcInfo::toString() const
+std::string ProcInfo::toStrStatus() const
 {
-	static const std::string stateStr[7] = {
-		"STOPPED",
-		"STARTING",
-		"RUNNING",
-		"BACKOFF",
-		"STOPPING",
-		"EXITED",
-		"FATAL",
-	};
 	std::string str(30, ' ');
 	char buf[sizeof("mon dd hh:mm AM")] = {};
 
@@ -307,6 +308,25 @@ std::string ProcInfo::toString() const
 	} else if (state_ == E_STATE_RUNNING) {
 		str += runningStateToStr(pid_, spawnTime_);
 	}
+	return str;
+}
+
+std::string ProcInfo::toStrLog(int pidSaved) const
+{
+	std::string str = name_;
+
+	if (state_ == E_STATE_STARTING) {
+		str += ": process started (";
+	} else if (state_ == E_STATE_BACKOFF || state_ == E_STATE_EXITED ||
+	           state_ == E_STATE_FATAL || state_ == E_STATE_STOPPED) {
+		str += ": process ended (state " + stateStr[state_] + ", ";
+
+		if (state_ == E_STATE_FATAL && exitCode_ == EXIT_SPAWN_FAILED)
+			str += ", spawn failed, ";
+		else if (state_ == E_STATE_BACKOFF || state_ == E_STATE_FATAL)
+			str += ", exited too quickly, ";
+	}
+	str += "pid: " + std::to_string(pidSaved) + ")\n";
 	return str;
 }
 

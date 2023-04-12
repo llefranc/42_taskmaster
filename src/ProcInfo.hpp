@@ -62,7 +62,8 @@ class ProcInfo
 
 		bool isRunning() const;
 		void updateStartingState(std::time_t starttime);
-		std::string toString() const;
+		std::string toStrStatus() const;
+		std::string toStrLog(int pidSaved) const;
 
 
 		/* ----------------------------------------------- */

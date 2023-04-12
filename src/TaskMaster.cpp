@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/12 14:11:23 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/12 15:47:47 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -169,7 +169,7 @@ void TaskMaster::execStatus(const std::vector<std::string> &tokens)
 		for (size_t i = 0; i < it->getProcInfos().size(); ++i) {
 			startTime = it->getStartTime();
 			it->getProcInfos()[i].updateStartingState(startTime);
-			log_->iUser(it->getProcInfos()[i].toString() + "\n");
+			log_->iUser(it->getProcInfos()[i].toStrStatus() + "\n");
 		}
 	}
 }
@@ -198,7 +198,7 @@ void TaskMaster::execStart(const std::vector<std::string> &tokens)
 		    infoExec.first->getStartTime(), *infoExec.second) == -1) {
 			log_->eUser(tokens[1] + ": start failed\n");
 		} else {
-			log_->iAll("Process " + tokens[1] + " started\n");
+			log_->iUser("Process " + tokens[1] + " started\n");
 		}
 	}
 	return;
@@ -229,7 +229,7 @@ void TaskMaster::execStop(const std::vector<std::string> &tokens)
 		waitProcStop(infoExec.second->getUnSpawnTime(),
 				infoExec.first->getStopTime(),
 				*infoExec.second);
-		log_->iAll("Process " + tokens[1] + " stopped\n");
+		log_->iUser("Process " + tokens[1] + " stopped\n");
 	}
 	return;
 
@@ -345,34 +345,36 @@ void TaskMaster::execReload(const std::vector<std::string> &tokens)
 		return;
 	}
 
+	log_->iFile("Reloading configuration file\n");
 	updatePbList(&newPbList);
 	// printPbList(newPbList); // TODO delete
-	it = newPbList.begin();
-	for (; it != newPbList.end(); it = newPbList.begin()) {
+
+	pbList_ = newPbList;
+	it = pbList_.begin();
+	for (; it != pbList_.end(); it = pbList_.begin()) {
 		if (it->getState() == ProgramBlock::E_STATE_REMOVE) {
 			stopAllPbProcsNoRestart(it->getProcInfos(), *it);
-			log_->iUser(it->getName() + ": stopped\n");
-			log_->iUser(it->getName() + ": removed process group\n");
-			newPbList.remove(*it);
+			log_->iAll(it->getName() + ": stopped\n");
+			log_->iAll(it->getName() + ": removed process group\n");
+			pbList_.remove(*it);
 		}
 		else if (it->getState() == ProgramBlock::E_STATE_CHANGE_REMOVE) {
 			stopAllPbProcsNoRestart(it->getProcInfos(), *it);
-			log_->iUser(it->getName() + ": stopped\n");
-			log_->iUser(it->getName() + ": updated process group\n");
-			newPbList.remove(*it);
+			log_->iAll(it->getName() + ": stopped\n");
+			log_->iAll(it->getName() + ": updated process group\n");
+			pbList_.remove(*it);
 		}
 		else {
-			while (it != newPbList.end()) {
+			while (it != pbList_.end()) {
 				if (it->getState() == ProgramBlock::E_STATE_NEW)
-					log_->iUser(it->getName() + ": added "
+					log_->iAll(it->getName() + ": added "
 						    "process group\n");
 				it++;
 			}
 			break;
 		}
 	}
-	spawner_.autostart(newPbList);
-	pbList_ = newPbList;
+	spawner_.autostart(pbList_);
 	execStatus(std::vector<std::string>(1, std::string("status")));
 }
 
