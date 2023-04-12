@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/12 13:12:23 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/12 14:11:23 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -503,6 +503,7 @@ std::vector<pid_t> TaskMaster::signalOccured(bool isReloadOn, bool isRestartOn)
 		}
 	}
 	else if (isReloadOn && (g_sigFlag & SHUP)) {
+		log_->iUser("\nSIGHUP signal received\n");
 		execReload(std::vector<std::string>(1, std::string("reload")));
 		g_sigFlag &= ~SHUP;
 		log_->iUser("taskmaster> ");
