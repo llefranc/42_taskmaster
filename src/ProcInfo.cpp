@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/17 17:05:25 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/12 16:52:59 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/13 12:14:34 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -213,73 +213,10 @@ void ProcInfo::updateStartingState(std::time_t pbstarttime)
 		state_ = E_STATE_RUNNING;
 }
 
-// http://supervisord.org/subprocess.html >> Pour les differents process states
-
-/** ------- set pas le spawner -------- **/
-// script                     STARTING
-/*
-Quand un process est start, il est en STARTING tant que
-actual time - spwantime < starttime sachant que on pourra voir ca logiquement
-que pour les autostart
-*/
-
-/** ------- set par status command -------- **/
-// script                     RUNNING    pid 1721, uptime 0:00:08
-/*
-Quand son actual time - > start time
-*/
-
-/** ------- set par stop command -------- **/
-// script                     STOPPING
-/*
-// A process transitions into the STOPPING state via an administrative stop
-// request >>> Ne peut jamais arriver car stopping freeze le client et on wait
-// stoptime secs avant d'envoyer sigkill donc nous on peut pas le voir dans notre
-// (car on peut voire qu'en faisant status et la tant qu'on wait sur stoptime
-// on ne peut pas run status.) On le voit avec le vrai supervisor uniquement
-qunad on se connecte avec plusieurs clients.
-*/
-
-
-/** ------- set par unspawner -------- **/
-// script                     BACKOFF    Exited too quickly
-/*
-Quand un process exit et qu'il etait en STARTING, il est alors mis en
-backoff et l'os essaye de le restart si unexpected ? a verifier
-*/
-
-/** ------- set par unspawner -------- **/
-// script                     FATAL      Exited too quickly
-/*
-Survient parce que start 4 fois d'affilee suite a 4 BACKOFF, et
-que startretries etait de 3
-if (nbstart > startretries)
-        FATAL
-*/
-
-/** ------- set par unspawner -------- **/
-// script                     EXITED     Feb 23 05:26 PM
-/*
-Quand un process exit et qu'il etait en RUNNING, il est alors mis en EXITED
-que son exit code soit correct ou unexpected . On affiche alors le endtime.
-*/
-
-/** ------- set par config parser -------- **/
-// script                     STOPPED    Not started
-/*
-Quand un process n'a jamais run il est en STOPPED + Not started. Son spwantime=0
-*/
-
-/** ------- set par stop command -------- **/
-// script                     STOPPED    Feb 23 05:26 PM
-/*
-Quand un process a run une fois il est en stopped + endtime. Son
-unspawntime=heure du stop.
-*/
-
 /**
- * Return the ProcInfo state as a string (with additional info depending on the
- * state). Possible values:
+ * Return the ProcInfo state as a string for status command (with additional
+ * info depending on the state). Possible values:
+ *
  * program_name             STARTING
  * program_name             RUNNING    pid 1721, uptime 0:00:08
  * program_name             STOPPING
@@ -317,6 +254,17 @@ std::string ProcInfo::toStrStatus() const
 	return str;
 }
 
+/**
+ * Return the ProcInfo state as a string for log file (with addional info
+ * depending on the state). Possible values:
+ * 
+ * process started (pid: 166996)
+ * process ended (state EXITED, pid: 166996)
+ * process ended (state STOPPED, pid: 167119)
+ * process ended (state BACKOFF, exited too quickly, pid: 171435)
+ * process ended (state FATAL, exited too quickly, pid: 171435)
+ * process ended (state FATAL, spawn failed, pid: 171435)
+*/
 std::string ProcInfo::toStrLog(int pidSaved) const
 {
 	std::string str = name_;
@@ -328,9 +276,9 @@ std::string ProcInfo::toStrLog(int pidSaved) const
 		str += ": process ended (state " + stateStr[state_] + ", ";
 
 		if (state_ == E_STATE_FATAL && exitCode_ == EXIT_SPAWN_FAILED)
-			str += ", spawn failed, ";
+			str += "spawn failed, ";
 		else if (state_ == E_STATE_BACKOFF || state_ == E_STATE_FATAL)
-			str += ", exited too quickly, ";
+			str += "exited too quickly, ";
 	}
 	str += "pid: " + std::to_string(pidSaved) + ")\n";
 	return str;

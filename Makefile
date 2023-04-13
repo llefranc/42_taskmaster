@@ -6,7 +6,7 @@
 #    By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/02/08 15:19:33 by llefranc          #+#    #+#              #
-#    Updated: 2023/02/23 14:28:02 by llefranc         ###   ########.fr        #
+#    Updated: 2023/04/13 11:05:46 by llefranc         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -21,7 +21,7 @@ OBJS		=	$(SRCS:.cpp=.o)
 
 CC		=	g++
 
-FLAGS		=	-std=c++11 -g -fsanitize=address -Wall -Werror -Wextra
+FLAGS		=	-std=c++11 -Wall -Werror -Wextra
 
 all		:	$(NAME)
 

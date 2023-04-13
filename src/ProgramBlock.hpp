@@ -6,18 +6,18 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/08 14:54:11 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/11 17:07:38 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/13 10:31:48 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef PROGRAM_BLOCK_HPP
 #define PROGRAM_BLOCK_HPP
 
+#include "ProcInfo.hpp"
+
 #include <string>
 #include <vector>
 #include <set>
-
-#include "ProcInfo.hpp"
 
 class ProgramBlock
 {

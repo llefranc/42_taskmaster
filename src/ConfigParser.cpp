@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:24:03 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/12 17:03:53 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/13 10:23:41 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,8 +18,9 @@
 #include <set>
 #include <fstream>
 #include <algorithm>
+
 #include <ctype.h>
-#include <iostream>
+#include <csignal>
 
 static inline std::string lNbStr();
 static inline std::string &revWsTrim(std::string &s);
@@ -209,7 +210,6 @@ void ConfigParser::checkFileOpening(std::ifstream *ifs, const std::string& path)
 void ConfigParser::parseProgramName(const std::list<ProgramBlock> &pbList,
 		ProgramBlock *pb, const std::string &line)
 {
-	// std::cout << "Parsing program name: |" << line << "|\n";
 	size_t i = 0;
 	std::string name;
 
@@ -287,7 +287,6 @@ void ConfigParser::parseToken(ProgramBlock *pb, const std::string &line)
 void ConfigParser::parseCmd(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
 	if (param.size() > CP_MAX_LINE_LEN) {
 		throw std::runtime_error(token + ": line too long, max "
 				+ std::to_string(CP_MAX_LINE_LEN)
@@ -304,7 +303,6 @@ void ConfigParser::parseCmd(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseNumProcs(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
 	int val;
 	bool outOfRange = false;
 
@@ -333,7 +331,6 @@ void ConfigParser::parseUmask(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
 	int tmp;
-	// std::cout << "Parsing " << token << "\n";
 
 	if (param.size() == 3 && isOctalStr(param)) {
 		tmp = stoi(param, 0, 8);
@@ -351,8 +348,6 @@ void ConfigParser::parseUmask(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseWorkingDir(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
-
 	if (param.size() > CP_MAX_LINE_LEN) {
 		throw std::runtime_error(token + ": line too long, max "
 				+ std::to_string(CP_MAX_LINE_LEN)
@@ -368,8 +363,6 @@ void ConfigParser::parseWorkingDir(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseAutoStart(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
-
 	if (param == "false") {
 		pb->setAutoStart(false);
 	} else if (param == "true") {
@@ -387,8 +380,6 @@ void ConfigParser::parseAutoStart(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseAutoRestart(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
-
 	if (param == "false") {
 		pb->setAutoRestart(ProgramBlock::E_AUTO_FALSE);
 	} else if (param == "true") {
@@ -409,7 +400,6 @@ void ConfigParser::parseAutoRestart(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseStartRetries(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
 	int val;
 	bool outOfRange = false;
 
@@ -438,7 +428,6 @@ void ConfigParser::parseStartRetries(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseStartTime(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
 	int val;
 	bool outOfRange = false;
 
@@ -468,7 +457,6 @@ void ConfigParser::parseStartTime(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseExitCodes(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
 	int nb;
 	bool err = false;
 	std::set<int> s;
@@ -503,14 +491,13 @@ void ConfigParser::parseExitCodes(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseStopSignal(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
 	static const std::pair<int, std::string> p[6] = {
-		{2, "INT"},
-		{3, "QUIT"},
-		{9, "KILL"},
-		{10, "USR1"},
-		{12, "USR2"},
-		{15, "TERM"}
+		{SIGINT, "INT"},
+		{SIGQUIT, "QUIT"},
+		{SIGKILL, "KILL"},
+		{SIGUSR1, "USR1"},
+		{SIGUSR2, "USR2"},
+		{SIGTERM, "TERM"}
 	};
 
 	for (size_t i = 0; i < sizeof(p) / sizeof(*p); ++i) {
@@ -531,7 +518,6 @@ void ConfigParser::parseStopSignal(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseStopTime(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
 	int val;
 	bool outOfRange = false;
 
@@ -559,7 +545,6 @@ void ConfigParser::parseStopTime(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseStdout(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
 	if (param.size() > CP_MAX_LINE_LEN) {
 		throw std::runtime_error(token + ": line too long, max "
 				+ std::to_string(CP_MAX_LINE_LEN)
@@ -575,7 +560,6 @@ void ConfigParser::parseStdout(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseStderr(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
 	if (param.size() > CP_MAX_LINE_LEN) {
 		throw std::runtime_error(token + ": line too long, max "
 				+ std::to_string(CP_MAX_LINE_LEN)
@@ -593,7 +577,6 @@ void ConfigParser::parseStderr(ProgramBlock *pb, const std::string &token,
 void ConfigParser::parseEnv(ProgramBlock *pb, const std::string &token,
 		const std::string &param)
 {
-	// std::cout << "Parsing " << token << "\n";
 	std::vector<std::string> vars;
 	std::pair<std::string, std::string> p;
 	std::map<std::string, std::string>m = mapParentEnv_;

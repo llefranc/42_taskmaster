@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/12 15:47:47 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/13 12:17:13 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,6 @@
 
 extern volatile int g_sigFlag;
 
-void printPbList(const std::list<ProgramBlock> &pbList); // TODO degager
 
 /* ----------------------------------------------- */
 /* ---------------- COPLIEN FORM ----------------- */
@@ -68,16 +67,11 @@ void TaskMaster::initConfigParser(const std::string &path)
 	log_->iAll("Parsing configuration file (path: " + path + ")\n");
 	pbList_ = configParser_.load(path);
 	log_->iAll("Configuration file successfully loaded\n");
-
-	// for (std::list<ProgramBlock>::iterator it = pbList_.begin();
-	//     it != pbList_.end(); ++it) {
-	// 	it->print();
-	// } // TODO REMOVE
 }
 
 /**
  * - Wait for a command from user and execute it.
- * - Execute the appropriate action when a child process dies.
+ * - Execute the appropriate action when a signal is received.
 */
 void TaskMaster::shellRoutine()
 {
@@ -138,6 +132,9 @@ std::vector<std::string> TaskMaster::splitEntry(const std::string line)
 	return v;
 }
 
+/**
+ * Execute a command by calling the associated method.
+*/
 void TaskMaster::execCmd(const std::vector<std::string> &tokens)
 {
 	methodPtr m;
@@ -150,10 +147,35 @@ void TaskMaster::execCmd(const std::vector<std::string> &tokens)
 				return (this->*m)(tokens);
 			}
 		}
-		log_->eUser(tokens[0] + ": unknow command\n");
+		log_->eUser(tokens[0] + ": unknow command (try 'help' for more "
+			    "information)\n");
 	}
 }
 
+/**
+ * Print help.
+*/
+void TaskMaster::execHelp(const std::vector<std::string> &tokens)
+{
+	if (tokens.size() > 1) {
+		log_->eUser("too many arguments\n");
+		log_->iUser("Usage: help\n");
+		return;
+	}
+	log_->iUser("\nTaskmaster is a job controller. The following commands "
+		    "are available:\n\n");
+	log_->iUser(" - status\t\t\t print all processes status\n");
+	log_->iUser(" - start   [process_name]\t start a process\n");
+	log_->iUser(" - stop    [process_name]\t stop a process\n");
+	log_->iUser(" - restart [process_name]\t restart a process (or start "
+		    "if not running)\n");
+	log_->iUser(" - reload\t\t\t reload the configuration file\n");
+	log_->iUser(" - exit\t\t\t\t stop all running processes and exit\n\n");
+}
+
+/**
+ * Print all processes status.
+*/
 void TaskMaster::execStatus(const std::vector<std::string> &tokens)
 {
 	std::time_t startTime;
@@ -163,7 +185,6 @@ void TaskMaster::execStatus(const std::vector<std::string> &tokens)
 		log_->iUser("Usage: status\n");
 		return;
 	}
-	// printPbList(pbList_);
 	for (std::list<ProgramBlock>::iterator it = pbList_.begin();
 	    it != pbList_.end(); ++it) {
 		for (size_t i = 0; i < it->getProcInfos().size(); ++i) {
@@ -174,6 +195,11 @@ void TaskMaster::execStatus(const std::vector<std::string> &tokens)
 	}
 }
 
+/**
+ * Start a process with the parameters defined in configuration file, and wait
+ * for its successfull start if 'starttime' parameter is set in configuration
+ * file.
+*/
 void TaskMaster::execStart(const std::vector<std::string> &tokens)
 {
 	std::pair<ProgramBlock*, ProcInfo*> infoExec;
@@ -207,6 +233,10 @@ err:
 	log_->iUser("Usage: start [process_name]\n");
 }
 
+/**
+ * Stop a process by sending a signal to it. If the process isn't stopped after
+ * 'stoptime' parameter (default value is 1), then kill it.
+*/
 void TaskMaster::execStop(const std::vector<std::string> &tokens)
 {
 	std::pair<ProgramBlock*, ProcInfo*> infoExec;
@@ -237,6 +267,9 @@ err:
 	log_->iUser("Usage: stop [process_name]\n");
 }
 
+/**
+ * Restart a process by calling stop then start commands.
+*/
 void TaskMaster::execRestart(const std::vector<std::string> &tokens)
 {
 	std::pair<ProgramBlock*, ProcInfo*> infoExec;
@@ -260,15 +293,6 @@ void TaskMaster::execRestart(const std::vector<std::string> &tokens)
 
 err:
 	log_->iUser("Usage: restart [process_name]\n");
-}
-
-// TODO: delete
-void printPbList(const std::list<ProgramBlock> &pbList)
-{
-	for (std::list<ProgramBlock>::const_iterator it = pbList.begin();
-	     it != pbList.end(); ++it) {
-		it->print();
-	}
 }
 
 /**
@@ -347,7 +371,6 @@ void TaskMaster::execReload(const std::vector<std::string> &tokens)
 
 	log_->iFile("Reloading configuration file\n");
 	updatePbList(&newPbList);
-	// printPbList(newPbList); // TODO delete
 
 	pbList_ = newPbList;
 	it = pbList_.begin();
@@ -378,6 +401,10 @@ void TaskMaster::execReload(const std::vector<std::string> &tokens)
 	execStatus(std::vector<std::string>(1, std::string("status")));
 }
 
+/**
+ * Stopped all running processes by calling stop command on each of them, and
+ * then exit.
+*/
 void TaskMaster::execExit(const std::vector<std::string> &tokens)
 {
 	std::list<ProgramBlock>::iterator it = pbList_.begin();
@@ -398,6 +425,9 @@ void TaskMaster::execExit(const std::vector<std::string> &tokens)
 	exit(EXIT_SUCCESS);
 }
 
+/**
+ * Give process' information (ProgramBlock + ProcInfo) based on its name.
+*/
 void TaskMaster::getProgExecutionInfoByName(const std::string& name,
 		std::pair<ProgramBlock*, ProcInfo*>& info)
 {
@@ -422,6 +452,8 @@ void TaskMaster::getProgExecutionInfoByName(const std::string& name,
 
 /**
  * Wait until the process is successfully started.
+ *
+ * Return: 0 if successfull start, -1 if process exited before starttime.
 */
 int TaskMaster::waitProcStart(long spawnTime, long startTime,
 			      const ProcInfo& proc)
@@ -444,16 +476,19 @@ int TaskMaster::waitProcStart(long spawnTime, long startTime,
 }
 
 /**
- * Wait until the process is successfully stopped.
+ * Wait until the process is successfully stopped. If the stopping time takes
+ * more time than stoptime, then kill it.
+ *
+ * Return: 0 if successfull stop, -1 if process was forced killed.
 */
-int TaskMaster::waitProcStop(long unSpawnTime, long endTime,
+int TaskMaster::waitProcStop(long unSpawnTime, long stopTime,
 			     const ProcInfo &proc)
 {
 	long now = time(NULL);
 	int pidSaved = proc.getPid();
 	std::vector<int> pidsUnspawned;
 
-	while (now - unSpawnTime < endTime) {
+	while (now - unSpawnTime < stopTime) {
 		if (g_sigFlag)
 			pidsUnspawned = signalOccured(RELOAD_OFF, RESTART_OFF);
 
@@ -464,7 +499,6 @@ int TaskMaster::waitProcStop(long unSpawnTime, long endTime,
 		now = time(NULL);
 	}
 
-	std::cout << "sending kill signal\n"; // TODO remove
 	if (kill(proc.getPid(), SIGKILL) == -1)
 		throw std::runtime_error(std::string("kill failed ")
 				+ strerror(errno) + "\n");
@@ -474,7 +508,6 @@ int TaskMaster::waitProcStop(long unSpawnTime, long endTime,
 
 		if (std::find(pidsUnspawned.begin(), pidsUnspawned.end(),
 		    pidSaved) != pidsUnspawned.end()) {
-			std::cout << "killed the good pid\n"; // TODO remove
 			break;
 		}
 	}

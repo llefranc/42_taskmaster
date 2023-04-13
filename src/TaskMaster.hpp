@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:22 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/12 10:19:08 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/04/13 12:11:22 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ class TaskMaster
 			SHELL_CONTINUE,
 			SHELL_EXIT,
 		} E_shellStatus;
+
 
 		/* ----------------------------------------------- */
 		/* ---------------- COPLIEN FORM ----------------- */
@@ -65,6 +66,9 @@ class TaskMaster
 		void initConfigParser(const std::string &cfPath);
 		void shellRoutine();
 
+
+		/* ----------------------------------------------- */
+		/* --------------- PRIVATE METHODS --------------- */
 	private:
 
 		std::vector<std::string> splitEntry(const std::string line);
@@ -76,6 +80,7 @@ class TaskMaster
 				std::pair<ProgramBlock*, ProcInfo*> &info);
 
 		void execCmd(const std::vector<std::string> &tokens);
+		void execHelp(const std::vector<std::string> &tokens);
 		void execStatus(const std::vector<std::string> &tokens);
 		void execStart(const std::vector<std::string> &tokens);
 		void execStop(const std::vector<std::string> &tokens);
@@ -87,10 +92,11 @@ class TaskMaster
 					     const ProgramBlock& pb);
 		int waitProcStart(long spawnTime, long startTime,
 				  const ProcInfo& proc);
-		int waitProcStop(long unSpawnTime, long endTime,
+		int waitProcStop(long unSpawnTime, long stopTime,
 				 const ProcInfo &proc);
 		std::vector<pid_t> signalOccured(bool isReloadOn,
 						 bool isRestartOn);
+
 
 		/* ----------------------------------------------- */
 		/*------------------ ATTRIBUTES ------------------ */
@@ -105,7 +111,9 @@ class TaskMaster
 		typedef void (TaskMaster::*methodPtr)(
 				const std::vector<std::string> &);
 
-		const std::pair<std::string, methodPtr> cmdMeths_[6] = {
+		const std::pair<std::string, methodPtr> cmdMeths_[7] = {
+			std::make_pair<std::string, methodPtr>("help",
+					&TaskMaster::execHelp),
 			std::make_pair<std::string, methodPtr>("status",
 					&TaskMaster::execStatus),
 			std::make_pair<std::string, methodPtr>("start",

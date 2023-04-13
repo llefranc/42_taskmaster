@@ -82,7 +82,7 @@ class ProcInfo
 		std::string hash_;
 		pid_t pid_;
 		int nbRestart_;
-		time_t spawnTime_; /* renommer ces variables en spawn unspawn ? */
+		time_t spawnTime_;
 		time_t unSpawnTime_;
 		uint8_t exitCode_;
 };
