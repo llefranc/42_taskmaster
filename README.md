@@ -172,23 +172,21 @@ A list of key/value pairs in the form `KEY="val",KEY2="val2"` that will be place
 
 1. Download/Clone this repo
 
-        git clone https://github.com/llefranc/42_ft_ping
+        git clone https://github.com/llefranc/42_taskmaster
 
 2. `cd` into the root directory and run `make`
 
-        cd 42_ft_ping
+        cd 42_taskmaster
         make
+3. Create and fill a configuration file.
 
-3. Run `ft_ping` with appropriate permissions
+4. Run `taskmaster` by specifying the configuration file and a log file.
 
-		sudo ./ft_ping 192.168.0.1
-		sudo ./ft_ping localhost
-		sudo ./ft_ping google.com -v
+		./taskmaster conf/example_config_file.conf logfile
 
 ## Sources
 
 - [Documentation of supervisor][2]
-- [RFC of IP protocol][3]
 
 [1]: https://github.com/llefranc/42_taskmaster/blob/main/taskmaster.en.subject.pdf
 [1]: http://supervisord.org/configuration.html
