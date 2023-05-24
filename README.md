@@ -189,4 +189,4 @@ A list of key/value pairs in the form `KEY="val",KEY2="val2"` that will be place
 - [Documentation of supervisor][2]
 
 [1]: https://github.com/llefranc/42_taskmaster/blob/main/taskmaster.en.subject.pdf
-[1]: http://supervisord.org/configuration.html
+[2]: http://supervisord.org/configuration.html
