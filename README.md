@@ -64,9 +64,11 @@ When launched, taskmaster provides to the user a shell to manage the processes. 
 
 ![Alt text](https://github.com/llefranc/42_taskmaster/blob/main/taskmaster_config_file_example.png)
 
-Taskmaster need a configuration file that will be loaded at the beginning of the program, which indicate how to manage the different processes. It works in a similar way than supervisor configuration file.
+Taskmaster need a configuration file that will be loaded at the beginning of the program, which indicate how to manage the different processes. It works in a similar way than supervisor configuration file: 
 
-The configuration file contains one or many program blocks. Each program block defines the parameters for a group of process. Each program block are separated from others by empty lines.
+- :arrow_right: The configuration file contains one or many program blocks. 
+- :arrow_right: Each program block defines the parameters for a group of process. 
+- :arrow_right: Each program block are separated from others by empty lines.
 
 Only `[programblockname]` and `cmd` lines are mandatory, the others lines are optionnal and will take default values if not provided. If there is several time the same line inside a programblock, then only the last line will be taken in account.
 
