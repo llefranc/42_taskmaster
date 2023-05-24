@@ -51,12 +51,12 @@ ft_ping supports also the following options :
 
 When launched, taskmaster provides to the user a shell to manage the processes. The following commands are available:  
 
-- `status`                         -- print all processes status
-- `start [process_name]`         -- start a process
-- `stop [process_name]`         -- stop a process
-- `restart [process_name]`         -- restart a process (or start if not running)
-- `reload`                         -- reload the configuration file
-- `exit`                           -- stop all running processes and exit
+- `status` -- print all processes status.
+- `start [process_name]` -- start a process.
+- `stop [process_name]` -- stop a process.
+- `restart [process_name]` -- restart a process (or start if not running).
+- `reload` -- reload the configuration file.
+- `exit` -- stop all running processes and exit.
 
 
 ## Understanding the configuration file
