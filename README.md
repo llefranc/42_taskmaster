@@ -51,6 +51,7 @@ ft_ping supports also the following options :
 
 When launched, taskmaster provides to the user a shell to manage the processes. The following commands are available:  
 
+- `help` -- display help.
 - `status` -- print all processes status.
 - `start [process_name]` -- start a process.
 - `stop [process_name]` -- stop a process.
