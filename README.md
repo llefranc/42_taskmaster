@@ -56,18 +56,21 @@ The absolute path to the executable to launch and the arguments if needed.
 **Warning: only absolute path, no relative path!**  
 
 A non-correct path will not raise an error during the parsing, but the process launch will fail and the process will be put in a FATAL state (spawn failed).  
+
 *Default: none*  
 *Required: yes*  
 *Value: minimum 1 character, maximum 1024*  
 
 ##### `numprocs`
-The number of instances to start for a process. If superior to 1, the processes will be name the following way: "programblockname_x", where x is the instance number of the process.
-*Default: 1*
-*Required: no*
-*Value: an integer between 1 and 100*
+The number of instances to start for a process. If superior to 1, the processes will be name the following way: "programblockname_x", where x is the instance number of the process.  
+
+*Default: 1*  
+*Required: no*  
+*Value: an integer between 1 and 100*  
 
 ##### `umask`
 An octal number (e.g. 002, 022) representing the umask of the process.
+
 *Default: 022*
 *Required: no*
 *Value: octal value from 000 to 777*
