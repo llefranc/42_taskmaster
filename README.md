@@ -72,9 +72,9 @@ Taskmaster need a configuration file that will be loaded at the beginning of the
 
 Only `[programblockname]` and `cmd` lines are mandatory, the others lines are optionnal and will take default values if not provided. If there is several time the same line inside a programblock, then only the last line will be taken in account.
 
-It will allow you to setup the following parameters for each process :
+**It will allow you to setup the following parameters for each process :**
 
-##### `[programblockname]`
+##### :small_blue_diamond:`[programblockname]`
 The name use to identify the group of process. This line indicate the start of a new program block and must be separated from the previous program block by a newline.  
 The `programblockname` must be unique and surrounded by brackets.
 
@@ -92,21 +92,21 @@ A non-correct path will not raise an error during the parsing, but the process l
 
 > **Warning: only absolute path, no relative path**  
 
-##### `numprocs`
+##### :large_blue_diamond: `numprocs`
 The number of instances to start for a process. If superior to 1, the processes will be name the following way: "programblockname_x", where x is the instance number of the process.  
 
 *Default: 1*  
 *Required: no*  
 *Value: an integer between 1 and 100*  
 
-##### `umask`  
+##### :small_orange_diamond: `umask`  
 An octal number (e.g. 002, 022) representing the umask of the process.  
 
 *Default: 022*  
 *Required: no*  
 *Value: octal value from 000 to 777*  
 
-##### `workingdir`  
+##### :red_circle: `workingdir`  
 A file path representing the working directory of the process.  
 A non-correct path will not raise an error during the parsing, but the process launch will fail and the process will be put in a `FATAL` state (spawn failed).  
 
