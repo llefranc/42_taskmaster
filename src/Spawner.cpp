@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <cstdlib>
+#include <unistd.h>
 
 extern volatile int g_sigFlag;
 

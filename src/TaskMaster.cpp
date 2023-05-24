@@ -6,7 +6,7 @@
 /*   By: llefranc <llefranc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/16 13:21:14 by llefranc          #+#    #+#             */
-/*   Updated: 2023/04/13 12:17:13 by llefranc         ###   ########.fr       */
+/*   Updated: 2023/05/24 17:14:59 by llefranc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,12 +88,15 @@ void TaskMaster::shellRoutine()
 	while (true)
 	{
 		pollRet = poll(&pfd, 1, 0);
-		if (g_sigFlag ) {
+		if (g_sigFlag) {
 			signalOccured(RELOAD_ON, RESTART_ON);
 		}
 		else if (pollRet & POLLIN) {
 			getline(std::cin, buf);
-			tokens = splitEntry(buf.c_str());
+			if (std::cin.eof())
+				tokens = { "exit" };
+			else
+				tokens = splitEntry(buf.c_str());
 			execCmd(tokens);
 			log_->iUser("taskmaster> ");
 			buf.clear();
