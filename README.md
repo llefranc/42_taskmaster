@@ -31,6 +31,34 @@ ft_ping supports also the following options :
 
 ![Alt text](https://github.com/llefranc/42_ft_ping/blob/main/ft_ping_example2.png)
 
+## Building and running the project
+
+1. Download/Clone this repo
+
+        git clone https://github.com/llefranc/42_taskmaster
+
+2. `cd` into the root directory and run `make`
+
+        cd 42_taskmaster
+        make
+3. Create and fill a configuration file.
+
+4. Run `taskmaster` by specifying the configuration file and a log file.
+
+		./taskmaster conf/example_config_file.conf logfile
+
+## Shell commands
+
+When launched, taskmaster provides to the user a shell to manage the processes. The following commands are available:  
+
+- `status`                         -- print all processes status
+- `start [process_name]`         -- start a process
+- `stop [process_name]`         -- stop a process
+- `restart [process_name]`         -- restart a process (or start if not running)
+- `reload`                         -- reload the configuration file
+- `exit`                           -- stop all running processes and exit
+
+
 ## Understanding the configuration file
 
 ![Alt text](https://github.com/llefranc/42_taskmaster/blob/main/taskmaster_config_file_example.png)
@@ -162,27 +190,6 @@ A list of key/value pairs in the form `KEY="val",KEY2="val2"` that will be place
 *Value: A list of environment variable of the following form: `KEY="val",KEY2="val2"`*  
 
 > Child process spawned with taskmaster environment + the variable from `env` line in configuration file, or only taskmaster environment if `env` line is not provided.
-
-
-## Shell commands
-
-
-
-## Building and running the project
-
-1. Download/Clone this repo
-
-        git clone https://github.com/llefranc/42_taskmaster
-
-2. `cd` into the root directory and run `make`
-
-        cd 42_taskmaster
-        make
-3. Create and fill a configuration file.
-
-4. Run `taskmaster` by specifying the configuration file and a log file.
-
-		./taskmaster conf/example_config_file.conf logfile
 
 ## Sources
 
