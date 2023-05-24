@@ -7,11 +7,11 @@
 
 ## About
 
-taskaster is an implementation in C++ off a job control daemon, with features similar to supervisor.  
+Taskaster is an implementation in C++ off a job control daemon, with features similar to supervisor.  
 
-taskmaster take as first argument a path to a configuration file that will be loaded at the beginning of the program. See the configuration file section for more information.
+Taskmaster take as **first argument a path to a configuration file** that will be loaded at the beginning of the program. See the configuration file section for more information.
 
-taskmaster as second argument a path to a log file, where all the events will be report. If the log file specified by the path does not exist, taskmaster will create it.
+Taskmaster as **second argument a path to a log file**, where all the events will be report. If the log file specified by the path does not exist, taskmaster will create it.
 
 ![Alt text](https://github.com/llefranc/42_taskmaster/blob/main/taskmaster_log_example.png)
 
