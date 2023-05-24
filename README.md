@@ -7,29 +7,14 @@
 
 ## About
 
-ft_ping is a reimplementation in C of the ping utility based on the ping implementation from inetutils-2.0.
+taskaster is an implementation in C++ off a job control daemon, with features similar to supervisor.  
 
-ft_ping uses a raw socket to send each second an ICMP Echo Request packet with a timestamp in its body.
-It will also display a line of information for each received ICMP packet.
+taskmaster take as first argument a path to a configuration file that will be loaded at the beginning of the program. See the configuration file section for more information.
 
-It accepts a simple IPv4 address or hostname as a parameter, and supports both numerical IP addresses and hostnames.
+taskmaster as second argument a path to a log file, where all the events will be report. If the log file specified by the path does not exist, taskmaster will create it.
 
-> The program should be run with appropriate permissions, as sending ICMP Echo Request packets may require administrative privileges.
-
-When receiving an ICMP packet, ft_ping will check:
-- If the packet was correctly addressed to this process by checking the PID stored in the ID field of ICMP Echo Request.
-- If it's an error packet or not.
-
-ft_ping will ping the targeted host until `Ctrl+C` is pressed. It will then display statistics about the received ICMP Echo Response packets.
-
-ft_ping supports also the following options :
-- `-h`: provides help information about the usage and command-line options of ft_ping.
-- `-q`: enables quiet output, ft_ping will only display the end statistics.
-- `-v`: enables verbose output and allows viewing the results in case of problems or errors related to the packets.
-
-*Example of error packet (packet filtered) with verbose output*
-
-![Alt text](https://github.com/llefranc/42_ft_ping/blob/main/ft_ping_example2.png)
+*Log file example*
+![Alt text](https://github.com/llefranc/42_taskmaster/blob/main/taskmaster_log_example.png)
 
 ## Building and running the project
 
