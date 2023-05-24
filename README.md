@@ -44,7 +44,7 @@ Only `[programblockname]` and `cmd` lines are mandatory, the others lines are op
 It will allow you to setup the following parameters for each process :
 
 ##### `[programblockname]`
-The name use to identify the group of process. This line indicate the start of a new program block and must be separate from the previous program block by a newline.  
+The name use to identify the group of process. This line indicate the start of a new program block and must be separated from the previous program block by a newline.  
 The `programblockname` must be unique and surrounded by brackets.
 
 *Default: none*  
@@ -86,14 +86,14 @@ A non-correct path will not raise an error during the parsing, but the process l
 > **Warning: only absolute path, no relative path**  
 
 ##### `autostart`  
-If true, this program will start automatically when supervisord is started.  
+If true, this program will start automatically when taskmaster is started.  
 
 *Default: false*  
 *Required: no*  
 *Value: false, true*  
 
 ##### `autorestart`  
-Specifies if taskmaster should automatically restart a process if it exits when it is in the `RUNNING` state. May be one of false, unexpected, or true. If false, the process will not be autorestarted. If unexpected, the process will be restarted when the program exits with an exit code that is not one of the exit codes associated with this process’ configuration (see `exitcodes`). If true, the process will be unconditionally restarted when it exits, without regard to its exit code.  
+Specifies if taskmaster should automatically restart a process if it exits when it is in the `RUNNING` state. If `false`, the process will not be autorestarted. If `unexpected`, the process will be restarted when the program exits with an exit code that is not one of the exit codes associated with this process’ configuration (see `exitcodes`). If `true`, the process will be unconditionally restarted when it exits, without regard to its exit code.  
 
 *Default: false*  
 *Required: no*  
@@ -120,7 +120,7 @@ The list of “expected” exit codes for this program used with `autorestart`. 
 
 *Default: 0*  
 *Required: no*  
-*Value: a list of integers between 0 and 255. Each exit code must be separated by ',' character with no spaces around ',' separator character.*  
+*Value: a list of integers between 0 and 255. Each exit code must be separated by `,` character with no spaces  
 
 ##### `stopsignal`  
 The signal used to kill the program when a stop is requested. This can be specified using the signal’s name.  
@@ -132,7 +132,7 @@ The signal used to kill the program when a stop is requested. This can be specif
 ##### `stoptime`  
 The number of seconds to wait for the OS to return a SIGCHLD to taskmaster after the program has been sent a `stopsignal`. If this number of seconds elapses before taskmaster receives a SIGCHLD from the process, taskmaster will attempt to kill it with a final SIGKILL.  
 
-*Default: 0* 
+*Default: 0*   
 *Required: no*  
 *Value: an integer between 0 and 86400*  
 
@@ -140,14 +140,14 @@ The number of seconds to wait for the OS to return a SIGCHLD to taskmaster after
 Put process stdout output in this file.  
 A non-correct path will not raise an error during the parsing, but the process launch will fail and the process will be put in a `FATAL` state (spawn failed).  
 
-*Default: *programblockname_pid*_stdout.txt* 
+*Default: *programblockname_pid*_stdout.txt*  
 *Required: no*  
 *Value: minimum 1 character, maximum 1024*  
 > **Warning: only absolute path, no relative path**   
 
 ##### `stderr`  
 Put process stderr output in this file.  
-A non-correct path will not raise an error during the parsing, but the process launch will fail and the process will be put in a FATAL state (spawn failed).  
+A non-correct path will not raise an error during the parsing, but the process launch will fail and the process will be put in a `FATAL` state (spawn failed).  
 
 *Default: *programblockname_pid*_stderr.txt*  
 *Required: no*  
@@ -155,11 +155,11 @@ A non-correct path will not raise an error during the parsing, but the process l
 > **Warning: only absolute path, no relative path**  
 
 ##### `env`  
-A list of key/value pairs in the form KEY="val",KEY2="val2" that will be placed in the child process’ environment. Each environment variable must be separated by `,` character without any spaces around, and the value of the environment variable must be between double quotes.  
+A list of key/value pairs in the form `KEY="val",KEY2="val2"` that will be placed in the child process’ environment. Each environment variable must be separated by `,` character without any spaces around, and the value of the environment variable must be between double quotes.  
 
 *Default: empty list*  
 *Required: no*  
-*Value: A list of environment variable of the following form: KEY="val"KEY2="val2"*  
+*Value: A list of environment variable of the following form: `KEY="val",KEY2="val2"`*  
 
 > Child process spawned with taskmaster environment + the variable from `env` line in configuration file, or only taskmaster environment if `env` line is not provided.
 
