@@ -13,7 +13,6 @@ taskmaster take as first argument a path to a configuration file that will be lo
 
 taskmaster as second argument a path to a log file, where all the events will be report. If the log file specified by the path does not exist, taskmaster will create it.
 
-*Log file example*
 ![Alt text](https://github.com/llefranc/42_taskmaster/blob/main/taskmaster_log_example.png)
 
 ## Building and running the project
