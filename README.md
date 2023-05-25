@@ -15,6 +15,22 @@ Taskmaster as **second argument a path to a log file**, where all the events wil
 
 ![Alt text](https://github.com/llefranc/42_taskmaster/blob/main/taskmaster_log_example.png)
 
+### Process states
+
+A process controlled by taskmaster will be **in one of the below states** at any given time:
+
+- :arrow_right: `STOPPED`: the process has been stopped due to a stop request or has never been started.
+- :arrow_right: `STARTING`: the process is starting due to a start request.
+- :arrow_right: `RUNNING`: the process is running.
+- :arrow_right: `BACKOFF`: the process entered the `STARTING` state but subsequently exited too quickly (before the time defined in `starttime`) to move to the `RUNNING` state.
+- :arrow_right: `STOPPING`: the process is stopping due to a stop request.
+- :arrow_right: `EXITED`: The process exited from the `RUNNING` state (expectedly or unexpectedly).
+- :arrow_right: `FATAL`: The process could not be started successfully.
+
+Each process run under supervisor progresses through these states as per the following directed graph:
+
+![Alt text](https://github.com/llefranc/42_taskmaster/blob/main/taskmaster_process_states_example.png)
+
 ## Building and running the project
 
 1. Download/Clone this repo
