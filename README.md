@@ -27,7 +27,7 @@ A process controlled by taskmaster will be **in one of the below states** at any
 - :arrow_right: `EXITED`: The process exited from the `RUNNING` state (expectedly or unexpectedly).
 - :arrow_right: `FATAL`: The process could not be started successfully.
 
-Each process run under supervisor progresses through these states as per the following directed graph:
+Each process run under taskmaster progresses through these states as per the following directed graph:
 
 ![Alt text](https://github.com/llefranc/42_taskmaster/blob/main/taskmaster_process_states_example.png)
 
