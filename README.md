@@ -1,13 +1,13 @@
 # taskmaster (@42Paris)
 
-> This project was code for Linux. Here is the [subject][1].
+> This project was coded for Linux. Here is the [subject][1].
 >
 
 ![Alt text](https://github.com/llefranc/42_taskmaster/blob/main/taskmaster_example.png)
 
 ## About
 
-Taskaster is an implementation in C++ off a job control daemon, with features similar to supervisor.  
+Taskaster is an implementation in C++ off a job control daemon, with features similar to [supervisor][2].  
 
 Taskmaster take as **first argument a path to a configuration file** that will be loaded at the beginning of the program. See the configuration file section for more information.
 
