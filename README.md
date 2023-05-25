@@ -73,10 +73,10 @@ It works in a similar way than supervisor configuration file:
 - :arrow_right: Each program block are separated from others by empty lines.
 
 The **configuration file can be reloaded** during the execution of taskmaster using the `reload` shell command. When a reload occur:  
-- For the new program blocks, the corresponding processes will be added to the job control.
-- For the deleted program blocks, the corresponding processes will be stopped and removed from the job control.
-- For the modified program blocks, the corresponding processes will be stopped, updated and restarted if needed.
-- For the unchanged program blocks, no action will be take on the corresponding processes.
+- New program blocks: the corresponding processes will be added to the job control.
+- Deleted program blocks: the corresponding processes will be stopped and removed from the job control.
+- Modified program blocks: the corresponding processes will be stopped, updated and restarted if needed.
+- Unchanged program blocks: no action will be take on the corresponding processes.
 
 > Only `[programblockname]` and `cmd` lines are mandatory in the configuration file, the others lines are optionnal and will take default values if not provided. If there is several time the same line inside a programblock, then only the last line will be taken in account.
 
